@@ -23,18 +23,6 @@ const PALETTE_DEFAULTS := {
 static func get_default_config() -> Dictionary:
 	return {
 		"command_palette_enabled": true,
-		"wire_drop_menu_enabled": true,
-		"right_click_clear_enabled": true,
-		"select_all_enabled": true,
-		"goto_group_enabled": true,
-		"buy_max_enabled": true,
-		"z_order_fix_enabled": true,
-		"six_input_containers": true,
-		"mute_on_focus_loss": true,
-		"custom_boot_screen": true,
-		"highlight_disconnected_enabled": true,
-		"extra_glow": false,
-		"ui_opacity": 100.0,
 		"palette": PALETTE_DEFAULTS.duplicate(true)
 	}
 
@@ -46,6 +34,9 @@ var _config: Dictionary = {}
 func setup(settings, logger = null) -> void:
 	_settings = settings
 	_logger = logger
+	if _settings != null and _settings.has_signal("value_changed"):
+		if not _settings.value_changed.is_connected(_on_setting_changed):
+			_settings.value_changed.connect(_on_setting_changed)
 	_register_schema()
 	_load_config()
 
@@ -212,6 +203,24 @@ func set_value(key: String, value) -> void:
 	save_config()
 
 
+func _on_setting_changed(key: String, value, _old) -> void:
+	_log_info("Setting changed: %s = %s" % [key, str(value)])
+	if key == "TajemnikTV-CommandPalette.max_recents":
+		if str(value).is_valid_int():
+			_enforce_recents_limit(int(value))
+
+
+func _enforce_recents_limit(limit: int) -> void:
+	var palette = get_palette()
+	var recents = palette.get("recents", [])
+	if recents.size() > limit:
+		recents.resize(limit)
+		palette["recents"] = recents
+		_config["palette"] = palette
+		save_config()
+		_log_info("Enforced max recents limit: %d" % limit)
+
+
 func reset_to_defaults() -> void:
 	_config = get_default_config()
 	save_config()
@@ -276,7 +285,15 @@ func add_recent(command_id: String) -> void:
 	var recents = palette.get("recents", [])
 	recents.erase(command_id)
 	recents.push_front(command_id)
-	var max_recents = palette.get("max_recents", 10)
+	
+	var max_recents = 10
+	if _settings != null and _settings.has_method("get_int"):
+		# Prefer the user-exposed setting
+		max_recents = _settings.get_int("TajemnikTV-CommandPalette.max_recents", 10)
+	else:
+		# Fallback to internal config
+		max_recents = palette.get("max_recents", 10)
+
 	if recents.size() > max_recents:
 		recents.resize(max_recents)
 	palette["recents"] = recents
@@ -315,6 +332,8 @@ func set_onboarded(value: bool) -> void:
 	save_config()
 
 
+const LOG_ID := "TajemnikTV-CommandPalette"
+
 func _log_info(message: String) -> void:
 	if _logger != null and _logger.has_method("info"):
-		_logger.info("core", message)
+		_logger.info(LOG_ID, message)

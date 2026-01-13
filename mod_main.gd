@@ -14,16 +14,6 @@ var _core
 var _config
 var palette_controller
 var _palette_initialized: bool = false
-var wire_colors
-
-# Optional services that other mods can attach to
-var undo_manager
-var wire_clear_handler
-var focus_handler
-var node_group_z_fix
-var disconnected_highlighter
-var sticky_note_manager
-var goto_group_manager
 
 
 func _init() -> void:
@@ -35,6 +25,7 @@ func _init() -> void:
 		_log_warn("Taj's Core %s+ required; Command Palette disabled." % CORE_MIN_VERSION)
 		return
 	_register_module()
+	_register_settings()
 	_setup_settings()
 	_init_controller()
 	_register_keybinds()
@@ -59,6 +50,18 @@ func _register_module() -> void:
 		})
 
 
+func _register_settings() -> void:
+	if _core.settings == null:
+		return
+	_core.settings.register_schema(MOD_ID, {
+		MOD_ID + ".max_recents": {
+			"type": "int",
+			"default": 10,
+			"description": "Max Recent Commands"
+		}
+	})
+
+
 func _setup_settings() -> void:
 	_config = PaletteSettingsScript.new()
 	_config.setup(_core.settings, _core)
@@ -75,6 +78,18 @@ func _init_controller() -> void:
 func _register_events() -> void:
 	if _core.event_bus != null:
 		_core.event_bus.on("game.hud_ready", Callable(self, "_on_hud_ready"), self, true)
+	call_deferred("_check_existing_hud")
+
+
+func _check_existing_hud() -> void:
+	if _palette_initialized:
+		return
+	var root = get_tree().root if get_tree() != null else null
+	if root == null:
+		return
+	var hud = root.get_node_or_null("Main/HUD")
+	if hud != null:
+		_on_hud_ready({})
 
 
 func _on_hud_ready(_payload: Dictionary) -> void:
@@ -91,6 +106,8 @@ func _on_hud_ready(_payload: Dictionary) -> void:
 		return
 	palette_controller.initialize(get_tree(), _config, null, self, registry)
 	_palette_initialized = true
+	if _core.event_bus != null:
+		_core.event_bus.emit("command_palette.ready", {"controller": palette_controller, "overlay": palette_controller.overlay}, true)
 
 
 func _register_keybinds() -> void:
@@ -153,36 +170,6 @@ func _on_palette_forward() -> void:
 	if palette_controller and palette_controller.is_open() and palette_controller.overlay:
 		palette_controller.overlay._go_forward()
 
-
-func sync_settings_toggle(_config_key: String) -> void:
-	pass
-
-
-func _set_goto_group_visible(_visible: bool) -> void:
-	pass
-
-
-func _set_buy_max_visible(_visible: bool) -> void:
-	pass
-
-
-func set_extra_glow(_enabled: bool) -> void:
-	pass
-
-
-func _apply_ui_opacity(value: float) -> void:
-	var main = get_tree().root.get_node_or_null("Main")
-	if main:
-		var hud = main.get_node_or_null("HUD")
-		if hud:
-			var main_container = hud.get_node_or_null("Main/MainContainer")
-			if main_container:
-				main_container.modulate.a = value / 100.0
-
-
-func _debug_log_wrapper(message: String, force: bool = false) -> void:
-	if force or (_config != null and _config.get_value("debug_mode", false)):
-		_log_info(message)
 
 func _log_info(message: String) -> void:
 	if _core != null and _core.has_method("logi"):

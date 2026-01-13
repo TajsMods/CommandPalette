@@ -1,7 +1,7 @@
 # ==============================================================================
-# Taj's Mod - Upload Labs
-# Default Commands - Initial command set for the palette
+# Command Palette - Default Commands
 # Author: TajemnikTV
+# Description: Core command set for the palette (works with Core only)
 # ==============================================================================
 class_name TajsModDefaultCommands
 extends RefCounted
@@ -13,13 +13,7 @@ const CoreServices = preload("res://mods-unpacked/TajemnikTV-CommandPalette/exte
 
 ## Register all default commands
 static func register_all(registry, refs: Dictionary) -> void:
-    var mod_config = refs.get("mod_config")
-    var mod_ui = refs.get("mod_ui")
-    var mod_main = refs.get("mod_main")
-    var context = refs.get("context")
-    var palette_config = refs.get("palette_config")
     var controller = refs.get("controller")
-    var reg = refs.get("registry")
     
     # ==========================================
     # ROOT CATEGORIES
@@ -32,17 +26,6 @@ static func register_all(registry, refs: Dictionary) -> void:
         "keywords": ["nodes", "windows", "network", "connections"],
         "hint": "Node and connection management",
         "icon_path": "res://textures/icons/connections.png",
-        "is_category": true,
-        "badge": "SAFE"
-    })
-    
-    registry.register({
-        "id": "cat_notes",
-        "title": "Notes",
-        "category_path": [],
-        "keywords": ["notes", "sticky", "annotations", "comments", "text"],
-        "hint": "Sticky notes and annotations",
-        "icon_path": "res://textures/icons/star.png",
         "is_category": true,
         "badge": "SAFE"
     })
@@ -64,7 +47,7 @@ static func register_all(registry, refs: Dictionary) -> void:
         "icon_path": "res://textures/icons/cog.png",
         "badge": "SAFE",
         "keep_open": true,
-        "run": func(ctx):
+        "run": func(_ctx):
             if controller and controller.overlay:
                 controller.overlay.search_input.text = "= "
                 controller.overlay.search_input.caret_column = 2
@@ -93,8 +76,6 @@ static func register_all(registry, refs: Dictionary) -> void:
                 # Context awareness: if 1 node selected, show its info
                 if ctx.selected_node_count == 1:
                     var node = ctx.selected_nodes[0]
-                    # We need the window ID (usually filename without .tscn or custom ID)
-                    # WindowContainer usually has 'window_id' or we can infer it
                     var id = ""
                     if "id" in node: id = node.id
                     elif "window_id" in node: id = node.window_id
@@ -108,34 +89,10 @@ static func register_all(registry, refs: Dictionary) -> void:
                 controller.overlay.enter_node_browser()
     })
     
-    registry.register({
-        "id": "cat_tajs_mod",
-        "title": "Taj's Mod",
-        "category_path": [],
-        "keywords": ["mod", "settings", "tajs", "options"],
-        "hint": "Mod settings and features",
-        "icon_path": "res://textures/icons/puzzle.png",
-        "is_category": true,
-        "badge": "SAFE"
-    })
-    
-    
-    registry.register({
-        "id": "cat_help",
-        "title": "Help & Links",
-        "category_path": [],
-        "keywords": ["help", "links", "about", "info", "support"],
-        "hint": "Help and external links",
-        "icon_path": "res://textures/icons/question.png",
-        "is_category": true,
-        "badge": "SAFE"
-    })
-    
     # ==========================================
     # NODES - MAIN COMMANDS
     # ==========================================
     
-    # General commands under Nodes root
     registry.register({
         "id": "cmd_select_all_nodes",
         "title": "Select All Nodes",
@@ -144,7 +101,7 @@ static func register_all(registry, refs: Dictionary) -> void:
         "hint": "Select all nodes on the desktop",
         "icon_path": "res://textures/icons/select_all.png",
         "badge": "SAFE",
-        "run": func(ctx):
+        "run": func(_ctx):
             if Globals and Globals.desktop:
                 var windows_container = Globals.desktop.get_node_or_null("Windows")
                 if windows_container:
@@ -157,36 +114,6 @@ static func register_all(registry, refs: Dictionary) -> void:
                     CoreServices.notify("check", "Selected %d nodes" % typed_windows.size())
     })
     
-    # Undo command
-    registry.register({
-        "id": "cmd_undo",
-        "title": "Undo",
-        "category_path": ["Nodes"],
-        "keywords": ["undo", "revert", "back", "ctrl+z", "history"],
-        "hint": "Undo the last action (Ctrl+Z)",
-        "icon_path": "res://textures/icons/refresh.png",
-        "badge": "SAFE",
-        "can_run": func(ctx): return mod_main and mod_main.undo_manager and mod_main.undo_manager.can_undo(),
-        "run": func(ctx):
-            if mod_main and mod_main.undo_manager:
-                mod_main.undo_manager.undo()
-    })
-    
-    # Redo command
-    registry.register({
-        "id": "cmd_redo",
-        "title": "Redo",
-        "category_path": ["Nodes"],
-        "keywords": ["redo", "repeat", "forward", "ctrl+y", "history"],
-        "hint": "Redo the last undone action (Ctrl+Y)",
-        "icon_path": "res://textures/icons/refresh.png",
-        "badge": "SAFE",
-        "can_run": func(ctx): return mod_main and mod_main.undo_manager and mod_main.undo_manager.can_redo(),
-        "run": func(ctx):
-            if mod_main and mod_main.undo_manager:
-                mod_main.undo_manager.redo()
-    })
-    
     registry.register({
         "id": "cmd_deselect_all",
         "title": "Deselect All",
@@ -194,7 +121,7 @@ static func register_all(registry, refs: Dictionary) -> void:
         "keywords": ["deselect", "clear", "selection", "none"],
         "hint": "Clear the current selection",
         "badge": "SAFE",
-        "run": func(ctx):
+        "run": func(_ctx):
             if Globals:
                 var empty_windows: Array[WindowContainer] = []
                 var empty_connectors: Array[Control] = []
@@ -210,13 +137,12 @@ static func register_all(registry, refs: Dictionary) -> void:
         "hint": "Center the camera on selected nodes",
         "icon_path": "res://textures/icons/crosshair.png",
         "badge": "SAFE",
-        "run": func(ctx):
+        "run": func(_ctx):
             if Globals and Globals.selections.size() > 0:
                 var center = Vector2.ZERO
                 for window in Globals.selections:
                     center += window.position + window.size / 2
                 center /= Globals.selections.size()
-                # Use the signal to actually move the camera
                 Signals.center_camera.emit(center)
                 CoreServices.notify("check", "Centered on %d nodes" % Globals.selections.size())
             else:
@@ -227,7 +153,6 @@ static func register_all(registry, refs: Dictionary) -> void:
     # NODES - CATEGORY SUBCATEGORIES
     # ==========================================
     
-    # Register each category individually to avoid closure capture issues
     _register_node_category(registry, "network", "Network", "connections")
     _register_node_category(registry, "cpu", "CPU", "bits")
     _register_node_category(registry, "gpu", "GPU", "contrast")
@@ -238,54 +163,9 @@ static func register_all(registry, refs: Dictionary) -> void:
     _register_node_category(registry, "utility", "Utility", "cog")
     
     # ==========================================
-    # NODES > GROUPS
+    # NODES - UPGRADE & WIRE COMMANDS
     # ==========================================
     
-    registry.register({
-        "id": "cat_nodes_groups",
-        "title": "Groups",
-        "category_path": ["Nodes"],
-        "keywords": ["groups", "organize", "color"],
-        "hint": "Node group operations",
-        "icon_path": "res://textures/icons/nodes.png",
-        "is_category": true,
-        "badge": "SAFE"
-    })
-    
-    # Jump to Group command (opens group picker)
-    registry.register({
-        "id": "cmd_jump_to_group",
-        "title": "Jump to Group",
-        "category_path": ["Nodes", "Groups"],
-        "keywords": ["jump", "goto", "navigate", "group", "camera", "focus", "list"],
-        "hint": "Open palette picker to jump to any group",
-        "icon_path": "res://textures/icons/crosshair.png",
-        "badge": "SAFE",
-        "keep_open": true,
-        "run": func(ctx):
-            if not mod_main:
-                CoreServices.notify("exclamation", "Mod not initialized")
-                return
-            
-            var goto_manager = mod_main.get("goto_group_manager")
-            if not goto_manager:
-                CoreServices.notify("exclamation", "Group manager not found")
-                return
-            
-            var groups = goto_manager.get_all_groups()
-            if groups.is_empty():
-                CoreServices.notify("exclamation", "No groups on desktop")
-                return
-            
-            if controller and controller.overlay:
-                var overlay = controller.overlay
-                # Connect the group_selected signal to navigate_to_group (one-shot)
-                if overlay.group_selected.get_connections().size() == 0:
-                    overlay.group_selected.connect(goto_manager.navigate_to_group)
-                overlay.show_group_picker(groups, goto_manager)
-    })
-    
-    # Upgrade Selected command (in root Nodes)
     registry.register({
         "id": "cmd_upgrade_selected",
         "title": "Upgrade Selected",
@@ -294,11 +174,10 @@ static func register_all(registry, refs: Dictionary) -> void:
         "hint": "Upgrade all selected nodes (if affordable)",
         "icon_path": "res://textures/icons/up_arrow.png",
         "badge": "SAFE",
-        "run": func(ctx):
+        "run": func(_ctx):
             _upgrade_nodes(Globals.selections if Globals else [])
     })
     
-    # Clear All Wires in Selection command
     registry.register({
         "id": "cmd_clear_wires_selection",
         "title": "Clear All Wires in Selection",
@@ -307,8 +186,8 @@ static func register_all(registry, refs: Dictionary) -> void:
         "hint": "Disconnect all wires from selected nodes",
         "icon_path": "res://textures/icons/connections.png",
         "badge": "SAFE",
-        "can_run": func(ctx): return Globals and Globals.selections.size() > 0,
-        "run": func(ctx):
+        "can_run": func(_ctx): return Globals and Globals.selections.size() > 0,
+        "run": func(_ctx):
             var result = _clear_wires_for_windows(Globals.selections if Globals else [])
             if result.cleared > 0:
                 CoreServices.play_sound("close")
@@ -317,7 +196,6 @@ static func register_all(registry, refs: Dictionary) -> void:
                 CoreServices.notify("exclamation", "No connections to clear")
     })
     
-    # Upgrade All command (in root Nodes)
     registry.register({
         "id": "cmd_upgrade_all",
         "title": "Upgrade All",
@@ -326,7 +204,7 @@ static func register_all(registry, refs: Dictionary) -> void:
         "hint": "Upgrade all nodes on desktop (if affordable)",
         "icon_path": "res://textures/icons/up_arrow.png",
         "badge": "SAFE",
-        "run": func(ctx):
+        "run": func(_ctx):
             if Globals and Globals.desktop:
                 var windows_container = Globals.desktop.get_node_or_null("Windows")
                 if windows_container:
@@ -337,587 +215,11 @@ static func register_all(registry, refs: Dictionary) -> void:
                     _upgrade_nodes(all_windows)
     })
     
-    # ==========================================
-    # TAJ'S MOD - SETTINGS
-    # ==========================================
-    
-    registry.register({
-        "id": "cmd_open_settings",
-        "title": "Open Settings",
-        "category_path": ["Taj's Mod"],
-        "keywords": ["settings", "config", "options", "preferences", "menu"],
-        "hint": "Open the mod settings panel",
-        "icon_path": "res://textures/icons/cog.png",
-        "badge": "SAFE",
-        "run": func(ctx):
-            if mod_ui:
-                mod_ui.set_visible(true)
-    })
-    
-    registry.register({
-        "id": "cmd_close_settings",
-        "title": "Close Settings",
-        "category_path": ["Taj's Mod"],
-        "keywords": ["close", "hide", "settings"],
-        "hint": "Close the mod settings panel",
-        "badge": "SAFE",
-        "can_run": func(ctx): return mod_ui and mod_ui.is_visible(),
-        "run": func(ctx):
-            if mod_ui:
-                mod_ui.set_visible(false)
-    })
-    
-    # ==========================================
-    # TAJ'S MOD - SETTINGS TOGGLES
-    # ==========================================
-    
-    registry.register({
-        "id": "cat_tajs_toggles",
-        "title": "Feature Toggles",
-        "category_path": ["Taj's Mod"],
-        "keywords": ["toggles", "features", "enable", "disable", "settings"],
-        "hint": "Quick toggle for mod features",
-        "icon_path": "res://textures/icons/switch.png",
-        "is_category": true,
-        "badge": "SAFE"
-    })
-    
-    # Wire Drop Node Menu toggle
-    registry.register({
-        "id": "cmd_toggle_wire_drop",
-        "title": "Wire Drop Menu",
-        "get_title": func(): return "Wire Drop Menu " + ("[ON]" if mod_config.get_value("wire_drop_menu_enabled", true) else "[OFF]"),
-        "category_path": ["Taj's Mod", "Feature Toggles"],
-        "keywords": ["wire", "drop", "menu", "toggle", "enable", "disable"],
-        "hint": "Toggle wire drop node spawning menu",
-        "badge": "SAFE",
-        "run": func(ctx):
-            if mod_config and controller:
-                var current = mod_config.get_value("wire_drop_menu_enabled", true)
-                mod_config.set_value("wire_drop_menu_enabled", !current)
-                controller.set_wire_drop_enabled(!current)
-                if mod_main: mod_main.sync_settings_toggle("wire_drop_menu_enabled")
-                CoreServices.notify("check", "Wire Drop Menu: " + ("ON" if !current else "OFF"))
-    })
-    
-    # Command Palette toggle
-    registry.register({
-        "id": "cmd_toggle_palette",
-        "title": "Command Palette",
-        "get_title": func(): return "Command Palette " + ("[ON]" if mod_config.get_value("command_palette_enabled", true) else "[OFF]"),
-        "category_path": ["Taj's Mod", "Feature Toggles"],
-        "keywords": ["palette", "command", "mmb", "toggle"],
-        "hint": "Toggle command palette (MMB)",
-        "badge": "SAFE",
-        "run": func(ctx):
-            if mod_config and controller:
-                var current = mod_config.get_value("command_palette_enabled", true)
-                mod_config.set_value("command_palette_enabled", !current)
-                controller.set_palette_enabled(!current)
-                if mod_main: mod_main.sync_settings_toggle("command_palette_enabled")
-                CoreServices.notify("check", "Command Palette: " + ("ON" if !current else "OFF"))
-    })
-    
-    # Right-click Wire Clear toggle
-    registry.register({
-        "id": "cmd_toggle_wire_clear",
-        "title": "Right-click Wire Clear",
-        "get_title": func(): return "Right-click Wire Clear " + ("[ON]" if mod_config.get_value("right_click_clear_enabled", true) else "[OFF]"),
-        "category_path": ["Taj's Mod", "Feature Toggles"],
-        "keywords": ["wire", "clear", "right", "click", "toggle"],
-        "hint": "Toggle right-click to clear wires",
-        "badge": "SAFE",
-        "run": func(ctx):
-            if mod_config and mod_main and mod_main.wire_clear_handler:
-                var current = mod_config.get_value("right_click_clear_enabled", true)
-                mod_config.set_value("right_click_clear_enabled", !current)
-                mod_main.wire_clear_handler.set_enabled(!current)
-                mod_main.sync_settings_toggle("right_click_clear_enabled")
-                CoreServices.notify("check", "Wire Clear: " + ("ON" if !current else "OFF"))
-    })
-    
-    # Ctrl+A Select All toggle
-    registry.register({
-        "id": "cmd_toggle_select_all",
-        "title": "Ctrl+A Select All",
-        "get_title": func(): return "Ctrl+A Select All " + ("[ON]" if mod_config.get_value("select_all_enabled", true) else "[OFF]"),
-        "category_path": ["Taj's Mod", "Feature Toggles"],
-        "keywords": ["select", "all", "ctrl", "keyboard", "toggle"],
-        "hint": "Toggle Ctrl+A select all nodes",
-        "badge": "SAFE",
-        "run": func(ctx):
-            if mod_config and mod_main:
-                var current = mod_config.get_value("select_all_enabled", true)
-                mod_config.set_value("select_all_enabled", !current)
-                Globals.select_all_enabled = !current
-                mod_main.sync_settings_toggle("select_all_enabled")
-                CoreServices.notify("check", "Select All: " + ("ON" if !current else "OFF"))
-    })
-    
-    # Go To Group Button toggle
-    registry.register({
-        "id": "cmd_toggle_goto_group",
-        "title": "Go To Group Button",
-        "get_title": func(): return "Go To Group Button " + ("[ON]" if mod_config.get_value("goto_group_enabled", true) else "[OFF]"),
-        "category_path": ["Taj's Mod", "Feature Toggles"],
-        "keywords": ["goto", "group", "button", "panel", "toggle"],
-        "hint": "Toggle Go To Group panel button",
-        "badge": "SAFE",
-        "run": func(ctx):
-            if mod_config and mod_main:
-                var current = mod_config.get_value("goto_group_enabled", true)
-                mod_config.set_value("goto_group_enabled", !current)
-                mod_main._set_goto_group_visible(!current)
-                mod_main.sync_settings_toggle("goto_group_enabled")
-                CoreServices.notify("check", "Go To Group: " + ("ON" if !current else "OFF"))
-    })
-    
-    # Buy Max Button toggle
-    registry.register({
-        "id": "cmd_toggle_buy_max",
-        "title": "Buy Max Button",
-        "get_title": func(): return "Buy Max Button " + ("[ON]" if mod_config.get_value("buy_max_enabled", true) else "[OFF]"),
-        "category_path": ["Taj's Mod", "Feature Toggles"],
-        "keywords": ["buy", "max", "button", "upgrades", "toggle"],
-        "hint": "Toggle Buy Max button in upgrades",
-        "badge": "SAFE",
-        "run": func(ctx):
-            if mod_config and mod_main:
-                var current = mod_config.get_value("buy_max_enabled", true)
-                mod_config.set_value("buy_max_enabled", !current)
-                mod_main._set_buy_max_visible(!current)
-                mod_main.sync_settings_toggle("buy_max_enabled")
-                CoreServices.notify("check", "Buy Max: " + ("ON" if !current else "OFF"))
-    })
-    
-    # Z-Order Fix toggle
-    registry.register({
-        "id": "cmd_toggle_z_order",
-        "title": "Group Z-Order Fix",
-        "get_title": func(): return "Group Z-Order Fix " + ("[ON]" if mod_config.get_value("z_order_fix_enabled", true) else "[OFF]"),
-        "category_path": ["Taj's Mod", "Feature Toggles"],
-        "keywords": ["z", "order", "group", "layer", "toggle"],
-        "hint": "Toggle z-order fix for nested groups",
-        "badge": "SAFE",
-        "run": func(ctx):
-            if mod_config and mod_main and mod_main.node_group_z_fix:
-                var current = mod_config.get_value("z_order_fix_enabled", true)
-                mod_config.set_value("z_order_fix_enabled", !current)
-                mod_main.node_group_z_fix.set_enabled(!current)
-                mod_main.sync_settings_toggle("z_order_fix_enabled")
-                CoreServices.notify("check", "Z-Order Fix: " + ("ON" if !current else "OFF"))
-    })
-    
-    # 6-Input Containers toggle (requires restart)
-    registry.register({
-        "id": "cmd_toggle_six_inputs",
-        "title": "6-Input Containers ⟳",
-        "get_title": func(): return "6-Input Containers ⟳ " + ("[ON]" if mod_config.get_value("six_input_containers", true) else "[OFF]"),
-        "category_path": ["Taj's Mod", "Feature Toggles"],
-        "keywords": ["six", "6", "input", "container", "toggle"],
-        "hint": "Toggle 6-input containers (requires restart)",
-        "badge": "SAFE",
-        "run": func(ctx):
-            if mod_config and mod_main:
-                var current = mod_config.get_value("six_input_containers", true)
-                mod_config.set_value("six_input_containers", !current)
-                mod_main.sync_settings_toggle("six_input_containers")
-                CoreServices.notify("exclamation", "6-Input: " + ("ON" if !current else "OFF") + " (restart required)")
-    })
-    
-    # Mute on Focus Loss toggle
-    registry.register({
-        "id": "cmd_toggle_focus_mute",
-        "title": "Mute on Focus Loss",
-        "get_title": func(): return "Mute on Focus Loss " + ("[ON]" if mod_config.get_value("mute_on_focus_loss", true) else "[OFF]"),
-        "category_path": ["Taj's Mod", "Feature Toggles"],
-        "keywords": ["mute", "focus", "background", "audio", "toggle"],
-        "hint": "Toggle mute when game loses focus",
-        "badge": "SAFE",
-        "run": func(ctx):
-            if mod_config and mod_main and mod_main.focus_handler:
-                var current = mod_config.get_value("mute_on_focus_loss", true)
-                mod_main.focus_handler.set_enabled(!current)
-                mod_main.sync_settings_toggle("mute_on_focus_loss")
-                CoreServices.notify("check", "Focus Mute: " + ("ON" if !current else "OFF"))
-    })
-    
-    # Custom Boot Screen toggle
-    registry.register({
-        "id": "cmd_toggle_boot_screen",
-        "title": "Custom Boot Screen ⟳",
-        "get_title": func(): return "Custom Boot Screen ⟳ " + ("[ON]" if mod_config.get_value("custom_boot_screen", true) else "[OFF]"),
-        "category_path": ["Taj's Mod", "Feature Toggles"],
-        "keywords": ["boot", "screen", "splash", "startup", "toggle"],
-        "hint": "Toggle custom boot screen (restart to see)",
-        "badge": "SAFE",
-        "run": func(ctx):
-            if mod_config and mod_main:
-                var current = mod_config.get_value("custom_boot_screen", true)
-                mod_config.set_value("custom_boot_screen", !current)
-                mod_main.sync_settings_toggle("custom_boot_screen")
-                CoreServices.notify("check", "Boot Screen: " + ("ON" if !current else "OFF") + " (restart to see)")
-    })
-    
-    # Highlight Disconnected Nodes toggle
-    registry.register({
-        "id": "cmd_toggle_disconnected_highlight",
-        "title": "Highlight Disconnected Nodes",
-        "get_title": func(): return "Highlight Disconnected Nodes " + ("[ON]" if mod_config.get_value("highlight_disconnected_enabled", true) else "[OFF]"),
-        "category_path": ["Taj's Mod", "Feature Toggles"],
-        "keywords": ["highlight", "disconnected", "nodes", "graph", "connectivity", "broken", "toggle"],
-        "hint": "Toggle highlighting of disconnected nodes",
-        "icon_path": "res://textures/icons/connections.png",
-        "badge": "SAFE",
-        "run": func(ctx):
-            if mod_config and mod_main and mod_main.disconnected_highlighter:
-                var current = mod_config.get_value("highlight_disconnected_enabled", true)
-                mod_config.set_value("highlight_disconnected_enabled", !current)
-                mod_main.disconnected_highlighter.set_enabled(!current)
-                if !current:
-                    # Trigger recomputation when enabled
-                    mod_main.disconnected_highlighter.recompute_disconnected()
-                mod_main.sync_settings_toggle("highlight_disconnected_enabled")
-                CoreServices.notify("check", "Disconnected Highlight: " + ("ON" if !current else "OFF"))
-    })
-    
-    # ==========================================
-    # TAJ'S MOD - VISUALS
-    # ==========================================
-    
-    registry.register({
-        "id": "cat_tajs_visuals",
-        "title": "Visuals",
-        "category_path": ["Taj's Mod"],
-        "keywords": ["visuals", "glow", "effects", "graphics"],
-        "hint": "Visual settings and effects",
-        "icon_path": "res://textures/icons/eye_ball.png",
-        "is_category": true,
-        "badge": "SAFE"
-    })
-    
-    registry.register({
-        "id": "cmd_toggle_glow",
-        "title": "Toggle Extra Glow",
-        "category_path": ["Taj's Mod", "Visuals"],
-        "keywords": ["glow", "bloom", "effects", "visuals", "toggle"],
-        "hint": "Toggle the extra glow effect",
-        "icon_path": "res://textures/icons/contrast.png",
-        "badge": "SAFE",
-        "run": func(ctx):
-            if mod_main and mod_main.has_method("set_extra_glow"):
-                var current = mod_config.get_value("extra_glow", false) if mod_config else false
-                mod_main.set_extra_glow(!current)
-                CoreServices.notify("check", "Glow " + ("enabled" if !current else "disabled"))
-    })
-    
-    registry.register({
-        "id": "cmd_cycle_opacity",
-        "title": "Cycle UI Opacity",
-        "category_path": ["Taj's Mod", "Visuals"],
-        "keywords": ["opacity", "transparency", "ui", "fade"],
-        "hint": "Cycle through UI opacity levels: 100% → 75% → 50%",
-        "badge": "SAFE",
-        "run": func(ctx):
-            if mod_config and mod_main:
-                var current = mod_config.get_value("ui_opacity", 100)
-                var next = 100.0
-                if current >= 100:
-                    next = 75.0
-                elif current >= 75:
-                    next = 50.0
-                else:
-                    next = 100.0
-                mod_config.set_value("ui_opacity", next)
-                mod_main._apply_ui_opacity(next)
-                CoreServices.notify("check", "UI Opacity: %d%%" % int(next))
-    })
-    
-    # ==========================================
-    # TAJ'S MOD - SCREENSHOTS
-    # ==========================================
-    
-    registry.register({
-        "id": "cat_tajs_screenshots",
-        "title": "Screenshots",
-        "category_path": ["Taj's Mod"],
-        "keywords": ["screenshot", "capture", "photo", "image"],
-        "hint": "Screenshot options",
-        "icon_path": "res://textures/icons/camera.png",
-        "is_category": true,
-        "badge": "SAFE"
-    })
-    
-    registry.register({
-        "id": "cmd_take_screenshot",
-        "title": "Take Screenshot",
-        "category_path": ["Taj's Mod", "Screenshots"],
-        "keywords": ["screenshot", "capture", "photo", "save", "image"],
-        "hint": "Capture a full desktop screenshot",
-        "icon_path": "res://textures/icons/camera.png",
-        "badge": "SAFE",
-        "run": func(ctx):
-            # This will be overridden by mod_main
-            CoreServices.notify("check", "Taking screenshot...")
-    })
-    
-    registry.register({
-        "id": "cmd_open_screenshots_folder",
-        "title": "Open Screenshots Folder",
-        "category_path": ["Taj's Mod", "Screenshots"],
-        "keywords": ["open", "folder", "directory", "browse"],
-        "hint": "Open the screenshots folder in file explorer",
-        "badge": "SAFE",
-        "run": func(ctx):
-            var path = OS.get_user_data_dir() + "/screenshots"
-            DirAccess.make_dir_recursive_absolute(path)
-            OS.shell_open(path)
-    })
-    
-    # ==========================================
-    # TAJ'S MOD - DEBUG
-    # ==========================================
-    
-    registry.register({
-        "id": "cmd_reset_settings",
-        "title": "Reset All Settings",
-        "category_path": ["Taj's Mod"],
-        "keywords": ["reset", "defaults", "clear", "restore"],
-        "hint": "Reset all mod settings to defaults",
-        "icon_path": "res://textures/icons/refresh.png",
-        "badge": "SAFE",
-        "run": func(ctx):
-            if mod_config:
-                mod_config.reset_to_defaults()
-                CoreServices.notify("check", "Settings reset!")
-    })
-    
-    # ==========================================
-    # NOTES - COMMANDS
-    # ==========================================
-    
-    registry.register({
-        "id": "cmd_jump_to_note",
-        "title": "Jump to Note",
-        "category_path": ["Notes"],
-        "keywords": ["jump", "goto", "navigate", "note", "sticky", "list"],
-        "hint": "Open palette picker to jump to any sticky note",
-        "icon_path": "res://textures/icons/crosshair.png",
-        "badge": "SAFE",
-        "keep_open": true,
-        "run": func(ctx):
-            if not mod_main:
-                CoreServices.notify("exclamation", "Mod not initialized")
-                return
-            
-            if not mod_main.sticky_note_manager:
-                CoreServices.notify("exclamation", "Note manager not found")
-                return
-            
-            var notes = mod_main.sticky_note_manager.get_all_notes()
-            if notes.is_empty():
-                CoreServices.notify("exclamation", "No notes on desktop")
-                return
-            
-            if controller and controller.overlay:
-                var overlay = controller.overlay
-                if overlay.note_picker_selected.get_connections().size() == 0:
-                    overlay.note_picker_selected.connect(mod_main.sticky_note_manager.navigate_to_note)
-                overlay.show_note_picker(notes, mod_main.sticky_note_manager)
-    })
-    
-    registry.register({
-        "id": "cmd_add_sticky_note",
-        "title": "Add Sticky Note",
-        "category_path": ["Notes"],
-        "keywords": ["note", "sticky", "sign", "label", "text", "comment", "annotation"],
-        "hint": "Place a text note on the canvas to label areas",
-        "icon_path": "res://textures/icons/star.png",
-        "badge": "SAFE",
-        "run": func(ctx):
-            if mod_main and mod_main.sticky_note_manager:
-                mod_main.sticky_note_manager.create_note_at_camera_center()
-            else:
-                CoreServices.notify("exclamation", "Sticky notes not initialized")
-    })
-    
-    registry.register({
-        "id": "cmd_clear_all_notes",
-        "title": "Clear All Sticky Notes",
-        "category_path": ["Notes"],
-        "keywords": ["note", "sticky", "clear", "delete", "remove", "all"],
-        "hint": "Delete all sticky notes from the canvas",
-        "icon_path": "res://textures/icons/trash.png",
-        "badge": "SAFE",
-        "can_run": func(ctx): return mod_main and mod_main.sticky_note_manager and mod_main.sticky_note_manager.get_note_count() > 0,
-        "run": func(ctx):
-            if mod_main and mod_main.sticky_note_manager:
-                mod_main.sticky_note_manager.clear_all_notes()
-    })
-    
-    # ==========================================
-    # HELP & LINKS
-    # ==========================================
-    
-    registry.register({
-        "id": "cmd_show_about",
-        "title": "About Taj's Mod",
-        "category_path": ["Help & Links"],
-        "keywords": ["about", "version", "info", "author"],
-        "hint": "Show mod version and info",
-        "icon_path": "res://textures/icons/question.png",
-        "badge": "SAFE",
-        "run": func(ctx):
-            CoreServices.notify("check", "Taj's Mod - Made with ❤️")
-    })
-    
-    registry.register({
-        "id": "cmd_copy_workshop",
-        "title": "Copy Workshop Link",
-        "category_path": ["Help & Links"],
-        "keywords": ["workshop", "steam", "link", "copy", "share"],
-        "hint": "Copy Steam Workshop link to clipboard",
-        "badge": "SAFE",
-        "run": func(ctx):
-            CoreServices.clipboard_set("https://steamcommunity.com/sharedfiles/filedetails/?id=3628222709")
-            CoreServices.notify("check", "Workshop link copied!")
-    })
-    
-    registry.register({
-        "id": "cmd_show_all_commands",
-        "title": "Show All Commands",
-        "display_name": "commands",
-        "aliases": ["list"],
-        "description": "List all registered commands in the console.",
-        "usage": "commands",
-        "examples": ["commands"],
-        "category": "Help",
-        "tags": ["help", "commands", "list"],
-        "category_path": ["Help & Links"],
-        "keywords": ["commands", "list", "all", "help", "reference"],
-        "hint": "Display a list of all registered commands",
-        "icon_path": "res://textures/icons/list.png",
-        "badge": "SAFE",
-        "keep_open": true,
-        "run": func(ctx):
-            if reg:
-                var commands = reg.get_all_commands()
-                var msg = "Registered Commands: %d\n" % commands.size()
-                for cmd in commands:
-                    if not cmd.get("is_category", false):
-                        var path = " > ".join(cmd.get("category_path", []))
-                        msg += "\n• %s (%s) - %s" % [cmd.get("title", "?"), path, cmd.get("hint", "")]
-                # Show in console/log since there's no popup system
-                CoreLog.log_info("TajsCommandPalette:Commands", msg)
-                CoreServices.notify("check", "Commands logged to console (check F1 console)")
-    })
-    
-    registry.register({
-        "id": "cmd_palette_help_view",
-        "title": "Help",
-        "display_name": "help",
-        "aliases": ["commands"],
-        "description": "Show help for commands and how to use them.",
-        "usage": "help [query]",
-        "examples": ["help", "help def", "help screenshot"],
-        "category": "Help",
-        "tags": ["help", "commands", "reference"],
-        "category_path": ["Help & Links"],
-        "keywords": ["help", "commands", "list", "reference", "guide"],
-        "hint": "Open the built-in help view",
-        "icon_path": "res://textures/icons/question.png",
-        "badge": "SAFE",
-        "keep_open": true,
-        "run": func(ctx):
-            if controller and controller.overlay:
-                controller.overlay.search_input.text = "help"
-                controller.overlay.search_input.caret_column = controller.overlay.search_input.text.length()
-                controller.overlay._perform_search()
-    })
-
-    registry.register({
-        "id": "cmd_enable_tools",
-        "title": "Enable Tools in Palette",
-        "category_path": ["Help & Links"],
-        "keywords": ["enable", "tools", "cheats", "unlock"],
-        "hint": "Enable opt-in tools and gameplay commands",
-        "badge": "SAFE",
-        "can_run": func(ctx): return not ctx.are_tools_enabled(),
-        "run": func(ctx):
-            ctx.set_tools_enabled(true)
-            if palette_config:
-                palette_config.set_tools_enabled(true)
-            CoreServices.notify("check", "Tools enabled in palette")
-    })
-    
-    registry.register({
-        "id": "cmd_disable_tools",
-        "title": "Disable Tools in Palette",
-        "category_path": ["Help & Links"],
-        "keywords": ["disable", "tools", "cheats", "hide"],
-        "hint": "Disable opt-in tools and gameplay commands",
-        "badge": "SAFE",
-        "can_run": func(ctx): return ctx.are_tools_enabled(),
-        "run": func(ctx):
-            ctx.set_tools_enabled(false)
-            if palette_config:
-                palette_config.set_tools_enabled(false)
-            CoreServices.notify("check", "Tools disabled in palette")
-    })
-    
-    registry.register({
-        "id": "cmd_palette_help",
-        "title": "Palette Help",
-        "category_path": ["Help & Links"],
-        "keywords": ["palette", "help", "onboarding", "tutorial", "hotkeys", "guide"],
-        "hint": "Show command palette help and hotkeys",
-        "icon_path": "res://textures/icons/question.png",
-        "badge": "SAFE",
-        "keep_open": true,
-        "run": func(ctx):
-            if controller and controller.overlay:
-                controller.overlay.show_onboarding_hint()
-                CoreServices.notify("check", "Showing palette help")
-    })
-    
     CoreLog.log_info(LOG_NAME, "Registered %d default commands" % registry.get_count())
-
-
-## Helper to modify currency
-static func _modify_currency(type: String, percent: float) -> void:
-    if not Globals.currencies.has(type):
-        return
-    
-    var current = Globals.currencies[type]
-    var amount = current * percent
-    
-    var mins = {"money": 1000.0, "research": 100.0, "token": 10.0}
-    var min_amount = mins.get(type, 100.0)
-    
-    if percent > 0 and abs(amount) < min_amount:
-        amount = min_amount
-    
-    Globals.currencies[type] += amount
-    
-    if Globals.currencies[type] < 0:
-        Globals.currencies[type] = 0
-    
-    if type == "money":
-        Globals.max_money = max(Globals.max_money, Globals.currencies[type])
-    elif type == "research":
-        Globals.max_research = max(Globals.max_research, Globals.currencies[type])
-    
-    if Globals.has_method("process"):
-        Globals.process(0)
-    
-    var sign_str = "+" if percent > 0 else ""
-    CoreServices.notify("check", "%s %s%d%%" % [type.capitalize(), sign_str, int(percent * 100)])
-    CoreServices.play_sound("click")
 
 
 ## Helper to register a node category with select and upgrade commands
 static func _register_node_category(registry, cat_id: String, cat_title: String, icon: String) -> void:
-    # Register category
     registry.register({
         "id": "cat_nodes_" + cat_id,
         "title": cat_title,
@@ -929,7 +231,6 @@ static func _register_node_category(registry, cat_id: String, cat_title: String,
         "badge": "SAFE"
     })
     
-    # Register select all for this category
     registry.register({
         "id": "cmd_select_" + cat_id,
         "title": "Select All " + cat_title,
@@ -937,7 +238,7 @@ static func _register_node_category(registry, cat_id: String, cat_title: String,
         "keywords": ["select", "all", cat_id, cat_title.to_lower()],
         "hint": "Select all " + cat_title + " nodes",
         "badge": "SAFE",
-        "run": func(ctx):
+        "run": func(_ctx):
             if Globals and Globals.desktop:
                 var windows_container = Globals.desktop.get_node_or_null("Windows")
                 if windows_container:
@@ -955,7 +256,6 @@ static func _register_node_category(registry, cat_id: String, cat_title: String,
                     CoreServices.notify("check", "Selected %d %s nodes" % [typed_windows.size(), cat_title])
     })
     
-    # Register upgrade for this category
     registry.register({
         "id": "cmd_upgrade_" + cat_id,
         "title": "Upgrade " + cat_title,
@@ -964,7 +264,7 @@ static func _register_node_category(registry, cat_id: String, cat_title: String,
         "hint": "Upgrade all " + cat_title + " nodes (if affordable)",
         "icon_path": "res://textures/icons/up_arrow.png",
         "badge": "SAFE",
-        "run": func(ctx):
+        "run": func(_ctx):
             if Globals and Globals.desktop:
                 var windows_container = Globals.desktop.get_node_or_null("Windows")
                 if windows_container:
@@ -990,22 +290,18 @@ static func _upgrade_nodes(windows: Array) -> void:
         if window == null:
             continue
         
-        # Check if window has upgrade capability
         if not window.has_method("upgrade"):
             continue
         
-        # Check if can afford the upgrade
         if window.has_method("can_upgrade"):
             if not window.can_upgrade():
                 skipped_count += 1
                 continue
-            # Windows with can_upgrade() usually handle their own cost deduction
             if window.has_method("_on_upgrade_button_pressed"):
                 window._on_upgrade_button_pressed()
                 upgraded_count += 1
                 continue
         
-        # For windows without can_upgrade, check cost manually
         var cost = window.get("cost")
         if cost != null and cost > 0:
             if cost > Globals.currencies.get("money", 0):
@@ -1013,7 +309,6 @@ static func _upgrade_nodes(windows: Array) -> void:
                 continue
             Globals.currencies["money"] -= cost
         
-        # Call upgrade with appropriate arguments
         var arg_count = _get_method_arg_count(window, "upgrade")
         if arg_count == 0:
             window.upgrade()
@@ -1021,7 +316,6 @@ static func _upgrade_nodes(windows: Array) -> void:
             window.upgrade(1)
         upgraded_count += 1
     
-    # Provide feedback
     if upgraded_count > 0:
         CoreServices.play_sound("upgrade")
         var msg = "Upgraded " + str(upgraded_count) + " nodes"
@@ -1060,13 +354,11 @@ static func _clear_wires_for_windows(windows: Array) -> Dictionary:
         for rc: ResourceContainer in containers:
             if not is_instance_valid(rc):
                 continue
-            # Clear all output connections
             var outputs: Array[String] = rc.outputs_id.duplicate()
             for output_id in outputs:
                 Signals.delete_connection.emit(rc.id, output_id)
                 cleared += 1
                 had_wires = true
-            # Clear input connection
             if not rc.input_id.is_empty():
                 Signals.delete_connection.emit(rc.input_id, rc.id)
                 cleared += 1
