@@ -30,7 +30,18 @@ static func register_all(registry, refs: Dictionary) -> void:
         "badge": "SAFE"
     })
     
-    # Calculator - quick inline math calculator
+    registry.register({
+        "id": "cat_tools",
+        "title": "Tools",
+        "category_path": [],
+        "keywords": ["tools", "utilities", "calculator", "math"],
+        "hint": "Utility tools and helpers",
+        "icon_path": "res://textures/icons/cog.png",
+        "is_category": true,
+        "badge": "SAFE"
+    })
+    
+    # Calculator
     registry.register({
         "id": "cmd_calculator",
         "title": "Calculator",
@@ -41,10 +52,10 @@ static func register_all(registry, refs: Dictionary) -> void:
         "examples": ["calc 2+2", "calc sqrt(144)", "= pi * 2^3"],
         "category": "General",
         "tags": ["math", "compute", "calculator"],
-        "category_path": [],
+        "category_path": ["Tools"],
         "keywords": ["calculator", "calc", "math", "compute", "calculate"],
         "hint": "Open inline calculator (= 2+2)",
-        "icon_path": "res://textures/icons/cog.png",
+        "icon_path": "res://mods-unpacked/TajemnikTV-Core/textures/icons/Accounting-Calculator-1.png",
         "badge": "SAFE",
         "keep_open": true,
         "run": func(_ctx):

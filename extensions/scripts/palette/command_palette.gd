@@ -14,7 +14,7 @@ const PALETTE_DEFAULTS := {
 	"hotkey": "middle_mouse",
 	"favorites": [],
 	"recents": [],
-	"tools_enabled": false,
+	"tools_enabled": true,
 	"max_recents": 10,
 	"palette_onboarded": false,
 	"tab_autocomplete": true
