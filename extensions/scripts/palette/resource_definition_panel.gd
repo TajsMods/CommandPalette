@@ -143,13 +143,13 @@ func _build_ui() -> void:
     
     _title_label = Label.new()
     _title_label.text = "Resource Name"
-    _title_label.add_theme_font_size_override("font_size", 28)
+    _title_label.add_theme_font_size_override("font_size", 32)
     _title_label.add_theme_color_override("font_color", Color(0.9, 0.95, 1.0))
     title_vbox.add_child(_title_label)
     
     _shape_label = Label.new()
     _shape_label.text = "Shape: circle"
-    _shape_label.add_theme_font_size_override("font_size", 16)
+    _shape_label.add_theme_font_size_override("font_size", 20)
     _shape_label.add_theme_color_override("font_color", Color(0.6, 0.7, 0.8))
     title_vbox.add_child(_shape_label)
     
@@ -187,14 +187,14 @@ func _build_ui() -> void:
     var color_section = _create_section("Color", content_vbox)
     _color_name_label = Label.new()
     _color_name_label.text = "white"
-    _color_name_label.add_theme_font_size_override("font_size", 18)
+    _color_name_label.add_theme_font_size_override("font_size", 22)
     color_section.add_child(_color_name_label)
     
     # Description section (if available)
     var desc_section = _create_section("Description", content_vbox)
     _description_label = Label.new()
     _description_label.text = "This resource type is used for connections."
-    _description_label.add_theme_font_size_override("font_size", 16)
+    _description_label.add_theme_font_size_override("font_size", 20)
     _description_label.add_theme_color_override("font_color", Color(0.7, 0.75, 0.8))
     _description_label.autowrap_mode = TextServer.AUTOWRAP_WORD
     desc_section.add_child(_description_label)
@@ -205,32 +205,32 @@ func _build_ui() -> void:
     
     _modifiers_label = Label.new()
     _modifiers_label.text = ""
-    _modifiers_label.add_theme_font_size_override("font_size", 16)
+    _modifiers_label.add_theme_font_size_override("font_size", 20)
     _modifiers_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
     _modifiers_label.visible = false
     _properties_section.add_child(_modifiers_label)
     
     _quality_label = Label.new()
     _quality_label.text = "Quality: 1.0"
-    _quality_label.add_theme_font_size_override("font_size", 16)
+    _quality_label.add_theme_font_size_override("font_size", 20)
     _quality_label.add_theme_color_override("font_color", Color(0.8, 0.85, 0.9))
     _properties_section.add_child(_quality_label)
     
     _value_label = Label.new()
     _value_label.text = "Value: 0"
-    _value_label.add_theme_font_size_override("font_size", 16)
+    _value_label.add_theme_font_size_override("font_size", 20)
     _value_label.add_theme_color_override("font_color", Color(0.8, 0.85, 0.9))
     _properties_section.add_child(_value_label)
     
     _size_label = Label.new()
     _size_label.text = "Size: 0b"
-    _size_label.add_theme_font_size_override("font_size", 16)
+    _size_label.add_theme_font_size_override("font_size", 20)
     _size_label.add_theme_color_override("font_color", Color(0.8, 0.85, 0.9))
     _properties_section.add_child(_size_label)
     
     _research_label = Label.new()
     _research_label.text = "Research: 0"
-    _research_label.add_theme_font_size_override("font_size", 16)
+    _research_label.add_theme_font_size_override("font_size", 20)
     _research_label.add_theme_color_override("font_color", Color(0.8, 0.85, 0.9))
     _properties_section.add_child(_research_label)
     
@@ -265,7 +265,7 @@ func _create_section(title: String, parent: Control) -> VBoxContainer:
     
     var title_label = Label.new()
     title_label.text = title
-    title_label.add_theme_font_size_override("font_size", 14)
+    title_label.add_theme_font_size_override("font_size", 18)
     title_label.add_theme_color_override("font_color", Color(0.5, 0.6, 0.7))
     section.add_child(title_label)
     

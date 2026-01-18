@@ -260,13 +260,13 @@ func _build_ui() -> void:
     
     _title_label = Label.new()
     _title_label.text = "Modifier Name"
-    _title_label.add_theme_font_size_override("font_size", 28)
+    _title_label.add_theme_font_size_override("font_size", 32)
     _title_label.add_theme_color_override("font_color", Color(0.9, 0.95, 1.0))
     title_vbox.add_child(_title_label)
     
     var type_label = Label.new()
     type_label.text = "File Modifier"
-    type_label.add_theme_font_size_override("font_size", 16)
+    type_label.add_theme_font_size_override("font_size", 20)
     type_label.add_theme_color_override("font_color", Color(0.6, 0.7, 0.8))
     title_vbox.add_child(type_label)
     
@@ -304,7 +304,7 @@ func _build_ui() -> void:
     var desc_section = _create_section("Description", content_vbox)
     _description_label = Label.new()
     _description_label.text = "This modifier affects files."
-    _description_label.add_theme_font_size_override("font_size", 18)
+    _description_label.add_theme_font_size_override("font_size", 22)
     _description_label.add_theme_color_override("font_color", Color(0.8, 0.85, 0.9))
     _description_label.autowrap_mode = TextServer.AUTOWRAP_WORD
     desc_section.add_child(_description_label)
@@ -338,7 +338,7 @@ func _create_section(title: String, parent: Control) -> VBoxContainer:
     
     var title_label = Label.new()
     title_label.text = title
-    title_label.add_theme_font_size_override("font_size", 14)
+    title_label.add_theme_font_size_override("font_size", 18)
     title_label.add_theme_color_override("font_color", Color(0.5, 0.6, 0.7))
     section.add_child(title_label)
     
@@ -400,7 +400,7 @@ func display_modifier(modifier_id: String) -> void:
     if effects.is_empty():
         var no_effect = Label.new()
         no_effect.text = "No direct stat effects"
-        no_effect.add_theme_font_size_override("font_size", 16)
+        no_effect.add_theme_font_size_override("font_size", 20)
         no_effect.add_theme_color_override("font_color", COLOR_NEUTRAL)
         _effects_container.add_child(no_effect)
     else:
@@ -467,7 +467,7 @@ func _add_effect_row(container: Control, effect: Dictionary) -> void:
         color = COLOR_NEUTRAL
     
     label.text = "%s: %s" % [stat_name, mult_text]
-    label.add_theme_font_size_override("font_size", 18)
+    label.add_theme_font_size_override("font_size", 20)
     label.add_theme_color_override("font_color", color)
     hbox.add_child(label)
 
@@ -479,14 +479,14 @@ func _add_info_row(container: Control, label_text: String, value_text: String) -
     
     var label = Label.new()
     label.text = label_text + ":"
-    label.add_theme_font_size_override("font_size", 16)
+    label.add_theme_font_size_override("font_size", 20)
     label.add_theme_color_override("font_color", Color(0.6, 0.7, 0.8))
     label.custom_minimum_size.x = 150
     hbox.add_child(label)
     
     var value = Label.new()
     value.text = value_text
-    value.add_theme_font_size_override("font_size", 16)
+    value.add_theme_font_size_override("font_size", 20)
     value.add_theme_color_override("font_color", Color(0.85, 0.9, 0.95))
     hbox.add_child(value)
 

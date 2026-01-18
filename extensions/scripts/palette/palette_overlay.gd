@@ -605,7 +605,7 @@ func _build_ui() -> void:
     no_results_label.text = "No results found"
     no_results_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     no_results_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
-    no_results_label.add_theme_font_size_override("font_size", 18)
+    no_results_label.add_theme_font_size_override("font_size", 22)
     no_results_label.visible = false
     
     # Node Definition Panel
@@ -686,14 +686,14 @@ func _create_header() -> Control:
     # Search icon
     var icon_label = Label.new()
     icon_label.text = "🔍"
-    icon_label.add_theme_font_size_override("font_size", 24)
+    icon_label.add_theme_font_size_override("font_size", 28)
     hbox.add_child(icon_label)
     
     # Search input
     search_input = LineEdit.new()
     search_input.placeholder_text = "Search commands..."
     search_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    search_input.add_theme_font_size_override("font_size", 20)
+    search_input.add_theme_font_size_override("font_size", 24)
     search_input.flat = true
     search_input.caret_blink = true
     
@@ -733,7 +733,7 @@ func _create_footer() -> Control:
     
     breadcrumb_label = Label.new()
     breadcrumb_label.text = "Home"
-    breadcrumb_label.add_theme_font_size_override("font_size", 14)
+    breadcrumb_label.add_theme_font_size_override("font_size", 18)
     breadcrumb_label.add_theme_color_override("font_color", Color(0.6, 0.7, 0.8))
     breadcrumb_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     hbox.add_child(breadcrumb_label)
@@ -741,7 +741,7 @@ func _create_footer() -> Control:
     # Hint text
     var hint = Label.new()
     hint.text = "↑↓ Navigate • Enter Select • Esc Close • Tab Autocomplete"
-    hint.add_theme_font_size_override("font_size", 12)
+    hint.add_theme_font_size_override("font_size", 16)
     hint.add_theme_color_override("font_color", Color(0.4, 0.5, 0.6))
     hbox.add_child(hint)
     
@@ -770,7 +770,7 @@ func _create_onboarding_hint() -> Control:
     # Title
     var title = Label.new()
     title.text = "✨ Welcome to the Command Palette!"
-    title.add_theme_font_size_override("font_size", 16)
+    title.add_theme_font_size_override("font_size", 20)
     title.add_theme_color_override("font_color", Color(0.9, 0.95, 1.0))
     _apply_text_style(title, true)
     vbox.add_child(title)
@@ -786,7 +786,7 @@ func _create_onboarding_hint() -> Control:
     for tip_text in tips:
         var tip = Label.new()
         tip.text = tip_text
-        tip.add_theme_font_size_override("font_size", 13)
+        tip.add_theme_font_size_override("font_size", 18)
         tip.add_theme_color_override("font_color", Color(0.7, 0.8, 0.9))
         vbox.add_child(tip)
     
@@ -830,13 +830,13 @@ func _create_autocomplete_row() -> Control:
     
     var title = Label.new()
     title.text = tr("Autocomplete")
-    title.add_theme_font_size_override("font_size", 12)
+    title.add_theme_font_size_override("font_size", 16)
     title.add_theme_color_override("font_color", Color(0.7, 0.85, 1.0))
     header.add_child(title)
     
     _autocomplete_hint = Label.new()
     _autocomplete_hint.text = ""
-    _autocomplete_hint.add_theme_font_size_override("font_size", 11)
+    _autocomplete_hint.add_theme_font_size_override("font_size", 16)
     _autocomplete_hint.add_theme_color_override("font_color", Color(0.55, 0.7, 0.85))
     _autocomplete_hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     header.add_child(_autocomplete_hint)
@@ -846,8 +846,8 @@ func _create_autocomplete_row() -> Control:
     _autocomplete_text.fit_content = true
     _autocomplete_text.scroll_active = false
     _autocomplete_text.autowrap_mode = TextServer.AUTOWRAP_WORD
-    _autocomplete_text.add_theme_font_size_override("normal_font_size", 16)
-    _autocomplete_text.add_theme_font_size_override("bold_font_size", 24)
+    _autocomplete_text.add_theme_font_size_override("normal_font_size", 20)
+    _autocomplete_text.add_theme_font_size_override("bold_font_size", 28)
     _autocomplete_text.add_theme_color_override("default_color", Color(0.9, 0.95, 1.0))
     vbox.add_child(_autocomplete_text)
     
@@ -1688,7 +1688,7 @@ func _create_calculator_result_row(item: Dictionary, index: int) -> Control:
     # Title (Result value)
     var title = Label.new()
     title.text = item.get("title", "")
-    title.add_theme_font_size_override("font_size", 22)
+    title.add_theme_font_size_override("font_size", 24)
     title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     
     if item.get("_is_calc_result", false):
@@ -1702,7 +1702,7 @@ func _create_calculator_result_row(item: Dictionary, index: int) -> Control:
     # Hint (action or error message)
     var hint = Label.new()
     hint.text = item.get("hint", "")
-    hint.add_theme_font_size_override("font_size", 13)
+    hint.add_theme_font_size_override("font_size", 18)
     hint.add_theme_color_override("font_color", Color(0.6, 0.7, 0.8))
     vbox.add_child(hint)
     
@@ -1853,12 +1853,12 @@ func _create_result_row(item: Dictionary, index: int) -> Control:
         var star = Label.new()
         star.text = "★"
         star.add_theme_color_override("font_color", Color(1, 0.85, 0.3))
-        star.add_theme_font_size_override("font_size", 16)
+        star.add_theme_font_size_override("font_size", 20)
         hbox.add_child(star)
     elif item.get("_is_recent", false):
         var clock = Label.new()
         clock.text = "⏱"
-        clock.add_theme_font_size_override("font_size", 14)
+        clock.add_theme_font_size_override("font_size", 18)
         clock.add_theme_color_override("font_color", Color(0.5, 0.6, 0.7))
         hbox.add_child(clock)
     
@@ -1879,7 +1879,7 @@ func _create_result_row(item: Dictionary, index: int) -> Control:
         title.text = title_func.call()
     else:
         title.text = item.get("title", "Unknown")
-    title.add_theme_font_size_override("font_size", 18)
+    title.add_theme_font_size_override("font_size", 22)
     title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     _apply_text_style(title, true)
     hbox.add_child(title)
@@ -1889,7 +1889,7 @@ func _create_result_row(item: Dictionary, index: int) -> Control:
     if not cat_path.is_empty() and _current_path.is_empty():
         var path_label = Label.new()
         path_label.text = " > ".join(cat_path)
-        path_label.add_theme_font_size_override("font_size", 12)
+        path_label.add_theme_font_size_override("font_size", 16)
         path_label.add_theme_color_override("font_color", Color(0.5, 0.6, 0.7))
         _apply_text_style(path_label, false) # Shadow only, no glow
         hbox.add_child(path_label)
@@ -1898,7 +1898,7 @@ func _create_result_row(item: Dictionary, index: int) -> Control:
     if item.get("is_category", false):
         var arrow = Label.new()
         arrow.text = "→"
-        arrow.add_theme_font_size_override("font_size", 18)
+        arrow.add_theme_font_size_override("font_size", 22)
         arrow.add_theme_color_override("font_color", Color(0.6, 0.7, 0.8))
         _apply_text_style(arrow, true)
         hbox.add_child(arrow)
@@ -1908,7 +1908,7 @@ func _create_result_row(item: Dictionary, index: int) -> Control:
         if badge_text != "SAFE" or true: # Always show badge for clarity
             var badge = Label.new()
             badge.text = "[%s]" % badge_text
-            badge.add_theme_font_size_override("font_size", 12)
+            badge.add_theme_font_size_override("font_size", 16)
             
             match badge_text:
                 "SAFE":
@@ -2198,7 +2198,7 @@ func _create_help_detail_row(item: Dictionary, index: int) -> Control:
     
     var title = Label.new()
     title.text = item.get("title", "")
-    title.add_theme_font_size_override("font_size", 14)
+    title.add_theme_font_size_override("font_size", 18)
     title.add_theme_color_override("font_color", Color(0.7, 0.8, 0.9))
     vbox.add_child(title)
     
@@ -2207,7 +2207,7 @@ func _create_help_detail_row(item: Dictionary, index: int) -> Control:
     value.fit_content = true
     value.scroll_active = false
     value.autowrap_mode = TextServer.AUTOWRAP_WORD
-    value.add_theme_font_size_override("font_size", 16)
+    value.add_theme_font_size_override("font_size", 20)
     value.add_theme_color_override("default_color", Color(0.9, 0.95, 1.0))
     value.text = item.get("value", "")
     vbox.add_child(value)
@@ -2215,7 +2215,7 @@ func _create_help_detail_row(item: Dictionary, index: int) -> Control:
     if item.get("_help_action", false):
         var hint = Label.new()
         hint.text = item.get("hint", "")
-        hint.add_theme_font_size_override("font_size", 12)
+        hint.add_theme_font_size_override("font_size", 16)
         hint.add_theme_color_override("font_color", Color(0.6, 0.7, 0.8))
         vbox.add_child(hint)
     

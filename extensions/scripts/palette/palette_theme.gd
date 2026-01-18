@@ -16,6 +16,18 @@ const ITEM_HEIGHT = 50
 const MAX_VISIBLE_ITEMS = 10
 
 # ==============================================================================
+# Font Sizes (optimized for game's JetBrains Mono Thin font)
+# ==============================================================================
+
+const FONT_SIZE_TINY := 16 # Rarely used, very small
+const FONT_SIZE_SMALL := 18 # Hints, small labels
+const FONT_SIZE_NORMAL := 20 # Secondary text, descriptions
+const FONT_SIZE_MEDIUM := 22 # Body text, item labels
+const FONT_SIZE_LARGE := 24 # Emphasis, good readability (matches game default)
+const FONT_SIZE_TITLE := 28 # Titles, headers
+const FONT_SIZE_XLARGE := 32 # Main titles
+
+# ==============================================================================
 # Colors - Background & Panel
 # ==============================================================================
 

@@ -117,13 +117,13 @@ func _build_ui() -> void:
     header_hbox.add_child(titles_vbox)
     
     _title_label = Label.new()
-    _title_label.add_theme_font_size_override("font_size", 20)
+    _title_label.add_theme_font_size_override("font_size", 24)
     _title_label.add_theme_constant_override("outline_size", 5)
     _title_label.add_theme_color_override("font_outline_color", COLOR_TEXT_GLOW)
     titles_vbox.add_child(_title_label)
     
     _category_label = Label.new()
-    _category_label.add_theme_font_size_override("font_size", 14)
+    _category_label.add_theme_font_size_override("font_size", 18)
     _category_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
     titles_vbox.add_child(_category_label)
     
@@ -149,7 +149,7 @@ func _build_ui() -> void:
     # Description
     _description_label = Label.new()
     _description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    _description_label.add_theme_font_size_override("font_size", 20)
+    _description_label.add_theme_font_size_override("font_size", 22)
     _description_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
     body_vbox.add_child(_description_label)
     
@@ -193,7 +193,7 @@ func _build_ui() -> void:
     unlock_panel.add_child(unlock_margin)
     
     _unlock_label = Label.new()
-    _unlock_label.add_theme_font_size_override("font_size", 18)
+    _unlock_label.add_theme_font_size_override("font_size", 20)
     _unlock_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.6))
     unlock_margin.add_child(_unlock_label)
     
@@ -229,7 +229,7 @@ func _build_ui() -> void:
     var back_btn = Button.new()
     back_btn.text = "Back"
     back_btn.custom_minimum_size = Vector2(60, 28)
-    back_btn.add_theme_font_size_override("font_size", 12)
+    back_btn.add_theme_font_size_override("font_size", 16)
     back_btn.pressed.connect(func(): back_requested.emit())
     footer_hbox.add_child(back_btn)
 
@@ -258,7 +258,7 @@ func _create_section_panel(title: String) -> PanelContainer:
     
     var label = Label.new()
     label.text = title
-    label.add_theme_font_size_override("font_size", 14)
+    label.add_theme_font_size_override("font_size", 18)
     label.add_theme_color_override("font_color", Color(0.6, 0.7, 0.8))
     vbox.add_child(label)
     
@@ -405,7 +405,7 @@ func _add_port_row(container: Control, port: Dictionary) -> void:
     
     # Set button text
     btn.text = "%dx %s (%s)" % [count, label_text, shape]
-    btn.add_theme_font_size_override("font_size", 18)
+    btn.add_theme_font_size_override("font_size", 20)
     btn.add_theme_color_override("font_color", color)
     btn.add_theme_color_override("font_hover_color", color.lightened(0.3))
     btn.add_theme_color_override("font_pressed_color", color.darkened(0.2))
@@ -591,7 +591,7 @@ func _add_placeholder(container: Control, text: String) -> void:
     var label = Label.new()
     label.text = text
     label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
-    label.add_theme_font_size_override("font_size", 12)
+    label.add_theme_font_size_override("font_size", 16)
     container.add_child(label)
 
 
@@ -617,7 +617,7 @@ func _add_modifier_row(container: Control, modifier: Dictionary) -> void:
     row.focus_mode = Control.FOCUS_NONE
     row.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
     row.alignment = HORIZONTAL_ALIGNMENT_LEFT
-    row.add_theme_font_size_override("font_size", 16)
+    row.add_theme_font_size_override("font_size", 18)
     row.add_theme_color_override("font_color", Color(0.7, 0.85, 1.0))
     row.add_theme_color_override("font_hover_color", Color(0.9, 0.95, 1.0))
     
