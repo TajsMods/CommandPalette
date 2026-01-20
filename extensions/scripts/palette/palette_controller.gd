@@ -589,6 +589,12 @@ func set_tab_autocomplete_enabled(enabled: bool) -> void:
         palette_config.set_value("tab_autocomplete", enabled)
 
 
+## Toggle favorite for currently selected command
+func toggle_favorite_selected() -> void:
+    if overlay and overlay.is_open() and overlay.has_method("_toggle_favorite_selected"):
+        overlay._toggle_favorite_selected()
+
+
 func _on_palette_closed() -> void:
     palette_closed.emit()
 

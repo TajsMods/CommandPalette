@@ -152,6 +152,18 @@ func _register_keybinds() -> void:
         KEYBIND_CATEGORY_ID
     )
 
+    var favorite_event = _core.keybinds.make_key_event(KEY_F, true)
+    _core.keybinds.register_action_scoped(
+        MOD_ID,
+        "favorite_selected",
+        "Favorite Selected",
+        [favorite_event],
+        _core.keybinds.CONTEXT_ANY,
+        Callable(self, "_on_palette_favorite"),
+        0,
+        KEYBIND_CATEGORY_ID
+    )
+
 
 func _on_palette_toggle() -> void:
     if palette_controller == null or _config == null:
@@ -169,6 +181,11 @@ func _on_palette_back() -> void:
 func _on_palette_forward() -> void:
     if palette_controller and palette_controller.is_open() and palette_controller.overlay:
         palette_controller.overlay._go_forward()
+
+
+func _on_palette_favorite() -> void:
+    if palette_controller and palette_controller.is_open():
+        palette_controller.toggle_favorite_selected()
 
 
 func _log_info(message: String) -> void:

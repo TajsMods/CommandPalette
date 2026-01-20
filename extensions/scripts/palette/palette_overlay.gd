@@ -2636,12 +2636,7 @@ func _on_search_input(event: InputEvent) -> void:
             if search_input.text.is_empty():
                 _go_back()
                 get_viewport().set_input_as_handled()
-        
-        KEY_F:
-            if event.ctrl_pressed:
-                _toggle_favorite_selected()
-                get_viewport().set_input_as_handled()
-        
+
         KEY_A:
             if event.ctrl_pressed:
                 # Select all text in search field (not nodes on desktop)
