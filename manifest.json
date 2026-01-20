@@ -1,14 +1,14 @@
 {
     "name": "CommandPalette",
     "namespace": "TajemnikTV",
-    "version_number": "1.0.3",
+    "version_number": "1.0.4",
     "description": "Command palette UI powered by Taj's Core command registry.",
     "website_url": "https://github.com/TajsMods/CommandPalette",
     "dependencies": ["TajemnikTV-Core"],
     "extra": {
         "godot": {
             "authors": ["TajemnikTV"],
-            "tags": ["ui", "palette"],
+            "tags": ["ui", "palette", "qol"],
             "description_rich": "",
             "optional_dependencies": [],
             "load_before": [],
