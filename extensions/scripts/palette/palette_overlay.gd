@@ -1944,7 +1944,9 @@ func _update_selection() -> void:
         var item = _result_items[_selected_index]
         # Ensure item is visible in scroll container
         await get_tree().process_frame
-        results_scroll.ensure_control_visible(item)
+        # Check if item is still valid after await (may have been freed during mode change)
+        if is_instance_valid(item) and is_instance_valid(results_scroll):
+            results_scroll.ensure_control_visible(item)
 
 
 func _update_breadcrumbs() -> void:
