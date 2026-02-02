@@ -56,47 +56,47 @@ func _ready() -> void:
 func initialize(tree: SceneTree, config, _ui = null, _mod_main_ref = null, registry_ref = null) -> void:
     if _initialized:
         return
-    
+
     mod_config = config
     registry = registry_ref
-    
+
     if registry == null:
         _log("Command registry not available; palette disabled.", true)
         return
-    
+
     # Initialize palette enabled state from config
     _palette_enabled = mod_config.get_value("command_palette_enabled", true) if mod_config else true
-    
+
     # Create core components
     context = ContextProviderScript.new()
     palette_config = mod_config
-    
+
     # Set up context
     context.set_tree(tree)
     if mod_config:
         context.set_config(mod_config)
-    
+
     # Initialize node filter EARLY so metadata service can use it
     node_filter = NodeCompatibilityFilterScript.new()
     # Defer cache building to not block startup
     call_deferred("_build_node_filter_cache")
-    
+
     # Initialize metadata service (MUST be before overlay setup)
     _init_node_metadata_service()
-    
+
     # Create overlay
     overlay = PaletteOverlayScript.new()
     tree.root.add_child(overlay)
     overlay.setup(registry, context, palette_config, node_metadata_service, null)
-    
+
     # Connect signals
     overlay.opened.connect(_on_palette_opened)
     overlay.closed.connect(_on_palette_closed)
     overlay.command_executed.connect(_on_command_executed)
-    
+
     # Register default commands
     _register_default_commands()
-    
+
     _initialized = true
     _log("Palette system initialized with %d commands" % registry.get_count())
 
@@ -107,16 +107,16 @@ var node_metadata_service # NodeMetadataService instance
 class NodeMetadataService extends RefCounted:
     const LOG_NAME = "TajsCommandPalette:NodeMetadataService"
     const CoreLog = preload("res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/common/core_log.gd")
-    
+
     # Cache and references
     var _node_cache: Array[Dictionary] = []
     var _node_details_cache: Dictionary = {}
     var _cache_built: bool = false
     var _node_filter # Reference to NodeCompatibilityFilter
-    
+
     func _init(filter_ref) -> void:
         _node_filter = filter_ref
-    
+
     ## Get all nodes available in the game
     func get_all_nodes() -> Array[Dictionary]:
         if not _cache_built:
@@ -128,18 +128,18 @@ class NodeMetadataService extends RefCounted:
         _node_details_cache.clear()
         if _node_filter and _node_filter.has_method("clear_cache"):
             _node_filter.clear_cache()
-    
+
     ## Find nodes matching a query
     func find_nodes(query: String) -> Array[Dictionary]:
         if not _cache_built:
             _build_cache()
-        
+
         if query.is_empty():
             return _node_cache
-        
+
         var results: Array[Dictionary] = []
         var q_lower = query.to_lower()
-        
+
         for node in _node_cache:
             # Score against internal name
             var name_score = _score_text(q_lower, node.name)
@@ -149,30 +149,30 @@ class NodeMetadataService extends RefCounted:
             # Also search description and category for better recall
             var desc_score = _score_text(q_lower, node.get("description", "")) * 0.5
             var cat_score = _score_text(q_lower, node.get("category", "")) * 0.7
-            
+
             var final_score = max(display_score, max(name_score, max(desc_score, cat_score)))
-            
+
             if final_score > 0.0:
                 var result = node.duplicate()
                 result.score = final_score
                 results.append(result)
-        
+
         results.sort_custom(func(a, b): return a.score > b.score)
         return results
-    
+
     func _score_text(query: String, text: String) -> float:
         if query.is_empty() or text.is_empty():
             return 0.0
-            
+
         var t_lower = text.to_lower()
-        
+
         if t_lower == query:
             return 100.0
         if t_lower.begins_with(query):
             return 80.0
         if query in t_lower:
             return 60.0
-            
+
         # Simple sequence match
         var q_idx = 0
         var t_idx = 0
@@ -180,38 +180,38 @@ class NodeMetadataService extends RefCounted:
             if query[q_idx] == t_lower[t_idx]:
                 q_idx += 1
             t_idx += 1
-            
+
         if q_idx == query.length():
             return 40.0
-            
+
         return 0.0
-    
+
     ## Get detailed information for a specific node
     func get_node_details(node_id: String) -> Dictionary:
         if _node_details_cache.has(node_id):
             return _node_details_cache[node_id]
-        
+
         if not Data.windows.has(node_id):
             return {}
-        
+
         var window_data = Data.windows[node_id]
         var details = _extract_node_details(node_id, window_data)
         _node_details_cache[node_id] = details
         return details
-    
+
     ## Build the initial cache of node summaries
     func _build_cache() -> void:
         _node_cache.clear()
-        
+
         if not Data or not "windows" in Data:
             CoreLog.log_error(LOG_NAME, "Data.windows not found")
             return
-        
+
         for id in Data.windows:
             var data = Data.windows[id]
             if not data.has("name"):
                 continue
-                
+
             var node_summary = {
                 "id": id,
                 "name": data.get("name", id),
@@ -221,10 +221,10 @@ class NodeMetadataService extends RefCounted:
                 "description": data.get("description", "")
             }
             _node_cache.append(node_summary)
-        
+
         _cache_built = true
         CoreLog.log_info(LOG_NAME, "Built node metadata cache for %d nodes" % _node_cache.size())
-    
+
     func _extract_node_details(node_id: String, data: Dictionary) -> Dictionary:
         var details = {
             "id": node_id,
@@ -238,7 +238,7 @@ class NodeMetadataService extends RefCounted:
             "modifiers_added": [],
             "scene_path": ""
         }
-        
+
         # Reuse logic from NodeCompatibilityFilter for reliable port extraction
         if _node_filter:
             var connect_info = _node_filter.get_connector_info(node_id)
@@ -249,7 +249,7 @@ class NodeMetadataService extends RefCounted:
                     _add_port_to_list(details.inputs, _convert_filter_port(p))
                 for p in connect_info.get("outputs", []):
                     _add_port_to_list(details.outputs, _convert_filter_port(p))
-        
+
         details.unlock_info = _get_unlock_info(node_id, data)
         details.modifiers_added = _extract_modifiers(node_id, data)
         return details
@@ -296,7 +296,7 @@ class NodeMetadataService extends RefCounted:
     func _extract_modifiers(node_id: String, data: Dictionary) -> Array:
         var modifier_ids: Array = []
         var seen: Dictionary = {}
-        
+
         var known_keys = [
             "modifier",
             "modifiers",
@@ -313,29 +313,29 @@ class NodeMetadataService extends RefCounted:
             "modifiers_add",
             "modifier_add"
         ]
-        
+
         for key in known_keys:
             if data.has(key):
                 _append_modifier_value(modifier_ids, seen, data[key])
-        
+
         # Fallback: scan any key containing "modifier"
         for key in data.keys():
             if str(key).to_lower().find("modifier") == -1:
                 continue
             _append_modifier_value(modifier_ids, seen, data[key])
-        
+
         # If no modifiers found in data, check our hardcoded mapping
         if modifier_ids.is_empty() and NODE_MODIFIERS.has(node_id):
             for mod in NODE_MODIFIERS[node_id]:
                 if not seen.has(mod):
                     seen[mod] = true
                     modifier_ids.append(mod)
-        
+
         var result: Array = []
         for mid in modifier_ids:
             var meta = _resolve_modifier_meta(mid)
             result.append(meta)
-        
+
         return result
 
     func _append_modifier_value(list: Array, seen: Dictionary, value) -> void:
@@ -373,16 +373,16 @@ class NodeMetadataService extends RefCounted:
         "decrypted": {"name": "Decrypted", "icon": "padlock_open", "description_key": "guide_file_modifiers_decrypted"},
         "trojan": {"name": "Trojan", "icon": "trojan", "description_key": "guide_file_modifiers_trojan"},
     }
-    
+
     func _resolve_modifier_meta(modifier_id: String) -> Dictionary:
         var meta = {
             "id": modifier_id,
             "name": modifier_id.capitalize(),
             "description": ""
         }
-        
+
         var id_lower = modifier_id.to_lower()
-        
+
         # 1. Check our known file modifiers dictionary first
         if FILE_MODIFIERS.has(id_lower):
             var fm = FILE_MODIFIERS[id_lower]
@@ -396,7 +396,7 @@ class NodeMetadataService extends RefCounted:
                 if translated != desc_key:
                     meta.description = translated
             return meta
-        
+
         # 2. Check Data.resources (for resources that might be modifiers)
         if Data.resources.has(modifier_id):
             var res = Data.resources[modifier_id]
@@ -406,7 +406,7 @@ class NodeMetadataService extends RefCounted:
                 if res.has("icon"):
                     meta.icon = res.get("icon", "")
             return meta
-        
+
         # 3. Check Data.items (if it exists)
         if "items" in Data and Data.items.has(modifier_id):
             var item = Data.items[modifier_id]
@@ -416,15 +416,15 @@ class NodeMetadataService extends RefCounted:
                 if item.has("icon"):
                     meta.icon = item.get("icon", "")
             return meta
-        
+
         # 4. Fallback: try guide translation key pattern
         var guide_key = "guide_file_modifiers_" + id_lower
         var translated = tr(guide_key)
         if translated != guide_key:
             meta.description = translated
-        
+
         return meta
-    
+
     func _convert_filter_port(filter_port: Dictionary) -> Dictionary:
         return {
             "shape": filter_port.get("shape", "?"),
@@ -443,7 +443,7 @@ class NodeMetadataService extends RefCounted:
 
     func _get_unlock_info(node_id: String, data: Dictionary) -> Dictionary:
         var info = {"status": "Available"}
-        
+
         # Check 'requirement' field (format: "research.X", "upgrade.X", "perk.X", "")
         var requirement = data.get("requirement", "")
         if requirement != "":
@@ -479,7 +479,7 @@ class NodeMetadataService extends RefCounted:
                 if "perks" in Data and Data.perks.has(pid):
                     info.perk_name = Data.perks[pid].get("name", pid)
                 return info
-        
+
         return info
 
 
@@ -526,13 +526,13 @@ func toggle() -> void:
         return
     if not _palette_enabled:
         return
-        
+
     # Ensure metadata service is initialized (recovery)
     if not node_metadata_service:
         _init_node_metadata_service()
         if node_metadata_service:
             overlay.node_metadata_service = node_metadata_service
-            
+
     overlay.toggle_palette()
 
 
@@ -542,7 +542,7 @@ func open() -> void:
         return
     if not _palette_enabled:
         return
-        
+
     # Ensure metadata service is initialized (recovery for hot-reloads)
     if not node_metadata_service:
         _init_node_metadata_service()
