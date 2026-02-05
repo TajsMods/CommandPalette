@@ -1,7 +1,6 @@
 # ==============================================================================
-# Taj's Mod - Upload Labs
-# Resource Definition Panel - UI for displaying resource/connector details
-# Author: TajemnikTV
+# Command Palette - Resource Definition Panel
+# Description: UI for displaying resource/connector details
 # ==============================================================================
 class_name TajsModResourceDefinitionPanel
 extends PanelContainer
@@ -301,9 +300,9 @@ func display_resource(resource_id: String, shape: String, color: String, label: 
     
     # Check CONFIGURABLE_WIRES for friendly name
     if Data.resources.has(resolved_id):
-        var res_data = Data.resources[resolved_id]
-        if res_data.has("name"):
-            display_name = tr(res_data.name)
+        var res_entry = Data.resources[resolved_id]
+        if res_entry.has("name"):
+            display_name = tr(res_entry.name)
     
     _title_label.text = display_name.capitalize()
     _shape_label.text = "Shape: %s" % shape
@@ -476,8 +475,8 @@ func _guess_file_resource_id() -> String:
             score += 20
         
         var key = str(id).to_lower()
-        var name = str(res.get("name", id)).to_lower()
-        if "file" in key or "file" in name:
+        var res_name = str(res.get("name", id)).to_lower()
+        if "file" in key or "file" in res_name:
             score += 30
         
         var desc = str(res.get("description", "")).to_lower()
@@ -558,12 +557,12 @@ func _update_properties(resource_id: String, variation: int) -> void:
         
         var quality = Utils.get_variation_quality_multiplier(variation)
         var value = Utils.get_file_value(resource_id, variation)
-        var size = Utils.get_file_size(resource_id, variation)
+        var file_size = Utils.get_file_size(resource_id, variation)
         var research = Utils.get_file_research(resource_id, variation)
         
         _quality_label.text = tr("quality") + ": %.1f" % quality
         _value_label.text = tr("value") + ": " + Utils.print_string(value, false)
-        _size_label.text = tr("size") + ": " + Utils.print_metric(size, false) + "b"
+        _size_label.text = tr("size") + ": " + Utils.print_metric(file_size, false) + "b"
         _research_label.text = tr("research") + ": " + Utils.print_string(research, false)
         return
     

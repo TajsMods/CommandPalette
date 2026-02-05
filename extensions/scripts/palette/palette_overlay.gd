@@ -1,7 +1,6 @@
 # ==============================================================================
-# Taj's Mod - Upload Labs
-# Palette Overlay - Main UI for the command palette
-# Author: TajemnikTV
+# Command Palette - Palette Overlay
+# Description: Main UI for the command palette
 # ==============================================================================
 class_name TajsModPaletteOverlay
 extends CanvasLayer

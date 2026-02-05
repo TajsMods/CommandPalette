@@ -1,7 +1,6 @@
 # ==============================================================================
-# Taj's Mod - Upload Labs
-# Modifier Definition Panel - UI for displaying file modifier details
-# Author: TajemnikTV
+# Command Palette - Modifier Definition Panel
+# Description: UI for displaying file modifier details
 # ==============================================================================
 class_name TajsModModifierDefinitionPanel
 extends PanelContainer

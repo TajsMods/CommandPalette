@@ -1,6 +1,5 @@
 # ==============================================================================
 # Command Palette - Core Settings
-# Author: TajemnikTV
 # Description: Core-managed command palette configuration/state
 # ==============================================================================
 class_name TajsCoreCommandPalette

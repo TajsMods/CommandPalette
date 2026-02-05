@@ -77,7 +77,7 @@ func _init_controller() -> void:
 
 func _register_events() -> void:
     if _core.event_bus != null:
-        _core.event_bus.on("game.hud_ready", Callable(self, "_on_hud_ready"), self, true)
+        _core.event_bus.on("game.hud_ready", Callable(self , "_on_hud_ready"), self , true)
     call_deferred("_check_existing_hud")
 
 
@@ -104,7 +104,7 @@ func _on_hud_ready(_payload: Dictionary) -> void:
     if registry == null:
         _log_warn("Command registry not available; palette UI disabled.")
         return
-    palette_controller.initialize(get_tree(), _config, null, self, registry)
+    palette_controller.initialize(get_tree(), _config, null, self , registry)
     _palette_initialized = true
     if _core.event_bus != null:
         _core.event_bus.emit("command_palette.ready", {"controller": palette_controller, "overlay": palette_controller.overlay}, true)
@@ -122,7 +122,7 @@ func _register_keybinds() -> void:
         "Open Command Palette",
         [toggle_event],
         _core.keybinds.CONTEXT_NO_TEXT,
-        Callable(self, "_on_palette_toggle"),
+        Callable(self , "_on_palette_toggle"),
         10,
         KEYBIND_CATEGORY_ID,
         true
@@ -135,7 +135,7 @@ func _register_keybinds() -> void:
         "Palette Back",
         [back_event],
         _core.keybinds.CONTEXT_ANY,
-        Callable(self, "_on_palette_back"),
+        Callable(self , "_on_palette_back"),
         0,
         KEYBIND_CATEGORY_ID
     )
@@ -147,7 +147,7 @@ func _register_keybinds() -> void:
         "Palette Forward",
         [forward_event],
         _core.keybinds.CONTEXT_ANY,
-        Callable(self, "_on_palette_forward"),
+        Callable(self , "_on_palette_forward"),
         0,
         KEYBIND_CATEGORY_ID
     )
@@ -159,7 +159,7 @@ func _register_keybinds() -> void:
         "Favorite Selected",
         [favorite_event],
         _core.keybinds.CONTEXT_ANY,
-        Callable(self, "_on_palette_favorite"),
+        Callable(self , "_on_palette_favorite"),
         0,
         KEYBIND_CATEGORY_ID
     )

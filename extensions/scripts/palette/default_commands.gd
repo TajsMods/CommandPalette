@@ -1,6 +1,5 @@
 # ==============================================================================
 # Command Palette - Default Commands
-# Author: TajemnikTV
 # Description: Core command set for the palette (works with Core only)
 # ==============================================================================
 class_name TajsModDefaultCommands
@@ -14,11 +13,11 @@ const CoreServices = preload("res://mods-unpacked/TajemnikTV-CommandPalette/exte
 ## Register all default commands
 static func register_all(registry, refs: Dictionary) -> void:
     var controller = refs.get("controller")
-    
+
     # ==========================================
     # ROOT CATEGORIES
     # ==========================================
-    
+
     registry.register({
         "id": "cat_nodes",
         "title": "Nodes",
@@ -29,7 +28,7 @@ static func register_all(registry, refs: Dictionary) -> void:
         "is_category": true,
         "badge": "SAFE"
     })
-    
+
     registry.register({
         "id": "cat_tools",
         "title": "Tools",
@@ -40,7 +39,7 @@ static func register_all(registry, refs: Dictionary) -> void:
         "is_category": true,
         "badge": "SAFE"
     })
-    
+
     # Calculator
     registry.register({
         "id": "cmd_calculator",
@@ -64,7 +63,7 @@ static func register_all(registry, refs: Dictionary) -> void:
                 controller.overlay.search_input.caret_column = 2
                 controller.overlay._perform_search()
     })
-    
+
     # Node Definition / Info
     registry.register({
         "id": "cmd_node_def",
@@ -91,19 +90,19 @@ static func register_all(registry, refs: Dictionary) -> void:
                     if "id" in node: id = node.id
                     elif "window_id" in node: id = node.window_id
                     elif node.has_method("get_window_id"): id = node.get_window_id()
-                    
+
                     if id != "":
                         controller.overlay.show_node_definition(id)
                         return
-                
+
                 # Default: show node browser with all nodes
                 controller.overlay.enter_node_browser()
     })
-    
+
     # ==========================================
     # NODES - MAIN COMMANDS
     # ==========================================
-    
+
     registry.register({
         "id": "cmd_select_all_nodes",
         "title": "Select All Nodes",
@@ -121,10 +120,10 @@ static func register_all(registry, refs: Dictionary) -> void:
                         if child is WindowContainer:
                             typed_windows.append(child)
                     var typed_connectors: Array[Control] = []
-                    Globals.set_selection(typed_windows, typed_connectors, 1)
+                    Globals.set_selection(typed_windows, typed_connectors)
                     CoreServices.notify("check", "Selected %d nodes" % typed_windows.size())
     })
-    
+
     registry.register({
         "id": "cmd_deselect_all",
         "title": "Deselect All",
@@ -136,10 +135,10 @@ static func register_all(registry, refs: Dictionary) -> void:
             if Globals:
                 var empty_windows: Array[WindowContainer] = []
                 var empty_connectors: Array[Control] = []
-                Globals.set_selection(empty_windows, empty_connectors, 0)
+                Globals.set_selection(empty_windows, empty_connectors)
                 CoreServices.notify("check", "Selection cleared")
     })
-    
+
     registry.register({
         "id": "cmd_center_view",
         "title": "Center View on Selection",
@@ -159,11 +158,11 @@ static func register_all(registry, refs: Dictionary) -> void:
             else:
                 CoreServices.notify("exclamation", "No nodes selected")
     })
-    
+
     # ==========================================
     # NODES - CATEGORY SUBCATEGORIES
     # ==========================================
-    
+
     _register_node_category(registry, "network", "Network", "connections")
     _register_node_category(registry, "cpu", "CPU", "bits")
     _register_node_category(registry, "gpu", "GPU", "contrast")
@@ -172,11 +171,11 @@ static func register_all(registry, refs: Dictionary) -> void:
     _register_node_category(registry, "hacking", "Hacking", "bug")
     _register_node_category(registry, "coding", "Coding", "code")
     _register_node_category(registry, "utility", "Utility", "cog")
-    
+
     # ==========================================
     # NODES - UPGRADE & WIRE COMMANDS
     # ==========================================
-    
+
     registry.register({
         "id": "cmd_upgrade_selected",
         "title": "Upgrade Selected",
@@ -188,7 +187,7 @@ static func register_all(registry, refs: Dictionary) -> void:
         "run": func(_ctx):
             _upgrade_nodes(Globals.selections if Globals else [])
     })
-    
+
     registry.register({
         "id": "cmd_clear_wires_selection",
         "title": "Clear All Wires in Selection",
@@ -206,7 +205,7 @@ static func register_all(registry, refs: Dictionary) -> void:
             else:
                 CoreServices.notify("exclamation", "No connections to clear")
     })
-    
+
     registry.register({
         "id": "cmd_upgrade_all",
         "title": "Upgrade All",
@@ -225,7 +224,7 @@ static func register_all(registry, refs: Dictionary) -> void:
                             all_windows.append(child)
                     _upgrade_nodes(all_windows)
     })
-    
+
     CoreLog.log_info(LOG_NAME, "Registered %d default commands" % registry.get_count())
 
 
@@ -241,7 +240,7 @@ static func _register_node_category(registry, cat_id: String, cat_title: String,
         "is_category": true,
         "badge": "SAFE"
     })
-    
+
     registry.register({
         "id": "cmd_select_" + cat_id,
         "title": "Select All " + cat_title,
@@ -263,10 +262,10 @@ static func _register_node_category(registry, cat_id: String, cat_title: String,
                                 if Data.windows[window_key].category == cat_id:
                                     typed_windows.append(child)
                     var typed_connectors: Array[Control] = []
-                    Globals.set_selection(typed_windows, typed_connectors, 1)
+                    Globals.set_selection(typed_windows, typed_connectors)
                     CoreServices.notify("check", "Selected %d %s nodes" % [typed_windows.size(), cat_title])
     })
-    
+
     registry.register({
         "id": "cmd_upgrade_" + cat_id,
         "title": "Upgrade " + cat_title,
@@ -296,14 +295,14 @@ static func _register_node_category(registry, cat_id: String, cat_title: String,
 static func _upgrade_nodes(windows: Array) -> void:
     var upgraded_count = 0
     var skipped_count = 0
-    
+
     for window in windows:
         if window == null:
             continue
-        
+
         if not window.has_method("upgrade"):
             continue
-        
+
         if window.has_method("can_upgrade"):
             if not window.can_upgrade():
                 skipped_count += 1
@@ -312,21 +311,21 @@ static func _upgrade_nodes(windows: Array) -> void:
                 window._on_upgrade_button_pressed()
                 upgraded_count += 1
                 continue
-        
+
         var cost = window.get("cost")
         if cost != null and cost > 0:
             if cost > Globals.currencies.get("money", 0):
                 skipped_count += 1
                 continue
             Globals.currencies["money"] -= cost
-        
+
         var arg_count = _get_method_arg_count(window, "upgrade")
         if arg_count == 0:
             window.upgrade()
         else:
             window.upgrade(1)
         upgraded_count += 1
-    
+
     if upgraded_count > 0:
         CoreServices.play_sound("upgrade")
         var msg = "Upgraded " + str(upgraded_count) + " nodes"
@@ -355,13 +354,13 @@ static func _get_method_arg_count(obj: Object, method_name: String) -> int:
 static func _clear_wires_for_windows(windows: Array) -> Dictionary:
     var cleared := 0
     var nodes_with_wires := 0
-    
+
     for window in windows:
         if not is_instance_valid(window):
             continue
         var containers := _find_resource_containers_in_window(window)
         var had_wires := false
-        
+
         for rc: ResourceContainer in containers:
             if not is_instance_valid(rc):
                 continue
@@ -374,10 +373,10 @@ static func _clear_wires_for_windows(windows: Array) -> Dictionary:
                 Signals.delete_connection.emit(rc.input_id, rc.id)
                 cleared += 1
                 had_wires = true
-        
+
         if had_wires:
             nodes_with_wires += 1
-    
+
     return {"cleared": cleared, "nodes": nodes_with_wires}
 
 

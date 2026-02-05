@@ -1,7 +1,6 @@
 # ==============================================================================
-# Taj's Mod - Upload Labs
-# Palette Controller - Orchestrates palette input and lifecycle
-# Author: TajemnikTV
+# Command Palette - Palette Controller
+# Description: Orchestrates palette input and lifecycle
 # ==============================================================================
 class_name TajsModPaletteController
 extends Node
@@ -86,13 +85,16 @@ func initialize(tree: SceneTree, config, _ui = null, _mod_main_ref = null, regis
 
     # Create overlay
     overlay = PaletteOverlayScript.new()
-    tree.root.add_child(overlay)
+    tree.root.call_deferred("add_child", overlay)
     overlay.setup(registry, context, palette_config, node_metadata_service, null)
 
-    # Connect signals
-    overlay.opened.connect(_on_palette_opened)
-    overlay.closed.connect(_on_palette_closed)
-    overlay.command_executed.connect(_on_command_executed)
+    # Connect signals (with guards for safety)
+    if not overlay.opened.is_connected(_on_palette_opened):
+        overlay.opened.connect(_on_palette_opened)
+    if not overlay.closed.is_connected(_on_palette_closed):
+        overlay.closed.connect(_on_palette_closed)
+    if not overlay.command_executed.is_connected(_on_command_executed):
+        overlay.command_executed.connect(_on_command_executed)
 
     # Register default commands
     _register_default_commands()

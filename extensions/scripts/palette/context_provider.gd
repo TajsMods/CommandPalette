@@ -1,7 +1,6 @@
 # ==============================================================================
-# Taj's Mod - Upload Labs
-# Context Provider - Provides current game/mod state for command visibility
-# Author: TajemnikTV
+# Command Palette - Context Provider
+# Description: Provides current game/mod state for command visibility
 # ==============================================================================
 class_name TajsModContextProvider
 extends RefCounted
@@ -22,66 +21,66 @@ var _config # TajsCoreCommandPalette
 
 
 func _init() -> void:
-	pass
+    pass
 
 
 func set_tree(tree: SceneTree) -> void:
-	_tree = tree
+    _tree = tree
 
 
 func set_config(config) -> void:
-	_config = config
-	_update_from_config()
+    _config = config
+    _update_from_config()
 
 
 func _update_from_config() -> void:
-	if _config:
-		if _config.has_method("are_tools_enabled"):
-			tools_enabled = _config.are_tools_enabled()
-		else:
-			tools_enabled = _config.get_value("tools_enabled", false)
+    if _config:
+        if _config.has_method("are_tools_enabled"):
+            tools_enabled = _config.are_tools_enabled()
+        else:
+            tools_enabled = _config.get_value("tools_enabled", false)
 
 
 ## Refresh context from current game state
 func refresh() -> void:
-	_update_from_config()
-	
-	if not _tree:
-		return
-	
-	# Check menu state
-	var main = _tree.root.get_node_or_null("Main")
-	if main:
-		var hud = main.get_node_or_null("HUD")
-		if hud:
-			# Check if any game menus are open
-			is_in_menu = false # Can be expanded based on game's menu system
-	
-	# Get selected nodes from Globals if available
-	if is_instance_valid(Globals):
-		if "selected_windows" in Globals:
-			selected_nodes = Globals.selected_windows if Globals.selected_windows else []
-			selected_node_count = selected_nodes.size()
-		else:
-			selected_nodes = []
-			selected_node_count = 0
+    _update_from_config()
+    
+    if not _tree:
+        return
+    
+    # Check menu state
+    var main = _tree.root.get_node_or_null("Main")
+    if main:
+        var hud = main.get_node_or_null("HUD")
+        if hud:
+            # Check if any game menus are open
+            is_in_menu = false # Can be expanded based on game's menu system
+    
+    # Get selected nodes from Globals if available
+    if is_instance_valid(Globals):
+        if "selected_windows" in Globals:
+            selected_nodes = Globals.selected_windows if Globals.selected_windows else []
+            selected_node_count = selected_nodes.size()
+        else:
+            selected_nodes = []
+            selected_node_count = 0
 
 
 ## Check if there are selected nodes
 func has_selection() -> bool:
-	return selected_node_count > 0
+    return selected_node_count > 0
 
 
 ## Check if tools/cheats are enabled in palette
 func are_tools_enabled() -> bool:
-	return tools_enabled
+    return tools_enabled
 
 
 ## Enable or disable tools in palette
 func set_tools_enabled(enabled: bool) -> void:
-	tools_enabled = enabled
-	if _config:
-		if _config.has_method("set_tools_enabled"):
-			_config.set_tools_enabled(enabled)
-		else:
-			_config.set_value("tools_enabled", enabled)
+    tools_enabled = enabled
+    if _config:
+        if _config.has_method("set_tools_enabled"):
+            _config.set_tools_enabled(enabled)
+        else:
+            _config.set_value("tools_enabled", enabled)

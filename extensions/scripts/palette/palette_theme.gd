@@ -1,7 +1,6 @@
 # ==============================================================================
-# Taj's Mod - Upload Labs
-# Palette Theme - Shared colors, dimensions, and style factories
-# Author: TajemnikTV
+# Taj's Command Palette - Palette Theme
+# Description: Shared colors, dimensions, and style factories
 # ==============================================================================
 class_name TajsModPaletteTheme
 extends RefCounted
@@ -94,112 +93,112 @@ const COLOR_DEF_NEUTRAL = Color(0.8, 0.85, 0.9)
 
 ## Create main panel style
 static func create_panel_style() -> StyleBoxFlat:
-	var style = StyleBoxFlat.new()
-	style.bg_color = COLOR_BG_PANEL
-	style.border_color = COLOR_BORDER_PANEL
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(12)
-	style.shadow_color = Color(0, 0, 0, 0.5)
-	style.shadow_size = 10
-	return style
+    var style = StyleBoxFlat.new()
+    style.bg_color = COLOR_BG_PANEL
+    style.border_color = COLOR_BORDER_PANEL
+    style.set_border_width_all(2)
+    style.set_corner_radius_all(12)
+    style.shadow_color = Color(0, 0, 0, 0.5)
+    style.shadow_size = 10
+    return style
 
 
 ## Create row style for result items
 static func create_row_style(selected: bool = false) -> StyleBoxFlat:
-	var style = StyleBoxFlat.new()
-	if selected:
-		style.bg_color = COLOR_SELECTED
-		style.border_color = COLOR_BORDER_SELECTED
-		style.set_border_width_all(1)
-	else:
-		style.bg_color = COLOR_BG_ROW
-		style.set_border_width_all(0)
-	style.set_corner_radius_all(6)
-	return style
+    var style = StyleBoxFlat.new()
+    if selected:
+        style.bg_color = COLOR_SELECTED
+        style.border_color = COLOR_BORDER_SELECTED
+        style.set_border_width_all(1)
+    else:
+        style.bg_color = COLOR_BG_ROW
+        style.set_border_width_all(0)
+    style.set_corner_radius_all(6)
+    return style
 
 
 ## Create footer style
 static func create_footer_style() -> StyleBoxFlat:
-	var style = StyleBoxFlat.new()
-	style.bg_color = COLOR_BG_FOOTER
-	style.corner_radius_bottom_left = 10
-	style.corner_radius_bottom_right = 10
-	return style
+    var style = StyleBoxFlat.new()
+    style.bg_color = COLOR_BG_FOOTER
+    style.corner_radius_bottom_left = 10
+    style.corner_radius_bottom_right = 10
+    return style
 
 
 ## Create input field style
 static func create_input_style() -> StyleBoxFlat:
-	var style = StyleBoxFlat.new()
-	style.bg_color = COLOR_BG_INPUT
-	style.set_corner_radius_all(8)
-	style.content_margin_left = 12
-	style.content_margin_right = 12
-	style.content_margin_top = 8
-	style.content_margin_bottom = 8
-	return style
+    var style = StyleBoxFlat.new()
+    style.bg_color = COLOR_BG_INPUT
+    style.set_corner_radius_all(8)
+    style.content_margin_left = 12
+    style.content_margin_right = 12
+    style.content_margin_top = 8
+    style.content_margin_bottom = 8
+    return style
 
 
 ## Create section panel style
 static func create_section_style() -> StyleBoxFlat:
-	var style = StyleBoxFlat.new()
-	style.bg_color = COLOR_BG_SECTION
-	style.set_corner_radius_all(6)
-	return style
+    var style = StyleBoxFlat.new()
+    style.bg_color = COLOR_BG_SECTION
+    style.set_corner_radius_all(6)
+    return style
 
 
 ## Create autocomplete row style
 static func create_autocomplete_style() -> StyleBoxFlat:
-	var style = StyleBoxFlat.new()
-	style.bg_color = COLOR_BG_AUTOCOMPLETE
-	style.border_color = COLOR_BORDER_AUTOCOMPLETE
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(8)
-	style.content_margin_left = 12
-	style.content_margin_right = 12
-	style.content_margin_top = 4
-	style.content_margin_bottom = 4
-	return style
+    var style = StyleBoxFlat.new()
+    style.bg_color = COLOR_BG_AUTOCOMPLETE
+    style.border_color = COLOR_BORDER_AUTOCOMPLETE
+    style.set_border_width_all(1)
+    style.set_corner_radius_all(8)
+    style.content_margin_left = 12
+    style.content_margin_right = 12
+    style.content_margin_top = 4
+    style.content_margin_bottom = 4
+    return style
 
 
 ## Create definition panel base style
 static func create_definition_panel_style() -> StyleBoxFlat:
-	var style = StyleBoxFlat.new()
-	style.bg_color = COLOR_DEF_BG
-	style.border_color = COLOR_DEF_BORDER
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(12)
-	return style
+    var style = StyleBoxFlat.new()
+    style.bg_color = COLOR_DEF_BG
+    style.border_color = COLOR_DEF_BORDER
+    style.set_border_width_all(2)
+    style.set_corner_radius_all(12)
+    return style
 
 
 ## Create onboarding hint style
 static func create_onboarding_style() -> StyleBoxFlat:
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.15, 0.25, 0.35, 0.95)
-	style.border_color = Color(0.4, 0.6, 0.8, 0.8)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(8)
-	style.content_margin_left = 16
-	style.content_margin_right = 16
-	style.content_margin_top = 12
-	style.content_margin_bottom = 12
-	return style
+    var style = StyleBoxFlat.new()
+    style.bg_color = Color(0.15, 0.25, 0.35, 0.95)
+    style.border_color = Color(0.4, 0.6, 0.8, 0.8)
+    style.set_border_width_all(2)
+    style.set_corner_radius_all(8)
+    style.content_margin_left = 16
+    style.content_margin_right = 16
+    style.content_margin_top = 12
+    style.content_margin_bottom = 12
+    return style
 
 
 ## Apply text glow effect to a label
 static func apply_text_glow(label: Label, use_glow: bool = true) -> void:
-	if use_glow:
-		label.add_theme_constant_override("outline_size", 5)
-		label.add_theme_color_override("font_outline_color", COLOR_TEXT_GLOW)
+    if use_glow:
+        label.add_theme_constant_override("outline_size", 5)
+        label.add_theme_color_override("font_outline_color", COLOR_TEXT_GLOW)
 
 
 ## Get badge color by type
 static func get_badge_color(badge_type: String) -> Color:
-	match badge_type:
-		"SAFE":
-			return COLOR_BADGE_SAFE
-		"OPT-IN":
-			return COLOR_BADGE_OPTIN
-		"GAMEPLAY":
-			return COLOR_BADGE_GAMEPLAY
-		_:
-			return COLOR_TEXT_SECONDARY
+    match badge_type:
+        "SAFE":
+            return COLOR_BADGE_SAFE
+        "OPT-IN":
+            return COLOR_BADGE_OPTIN
+        "GAMEPLAY":
+            return COLOR_BADGE_GAMEPLAY
+        _:
+            return COLOR_TEXT_SECONDARY
