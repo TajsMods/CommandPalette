@@ -1,7 +1,3 @@
-# ==============================================================================
-# Command Palette - Group Picker Mode
-# Description: Jump to Group feature
-# ==============================================================================
 class_name TajsModGroupPickerMode
 extends "res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/modes/mode_base.gd"
 

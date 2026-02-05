@@ -1,11 +1,4 @@
-# ==============================================================================
-# Taj's Mod - Upload Labs
-# Node Metadata Service - Abstraction layer for querying node information
-# Author: TajemnikTV
-# ==============================================================================
-# Node Metadata Service - Abstraction layer for querying node information
-# Author: TajemnikTV
-# ==============================================================================
+class_name TajsModNodeMetadataService
 extends RefCounted
 
 const LOG_NAME = "TajsCommandPalette:NodeMetadataService"
@@ -213,7 +206,7 @@ func _add_port_to_list(list: Array, port: Dictionary) -> void:
     list.append(port)
 
 ## Try to determine unlock info
-func _get_unlock_info(node_id: String, data: Dictionary) -> Dictionary:
+func _get_unlock_info(_node_id: String, data: Dictionary) -> Dictionary:
     # Heuristic: Check if it's a base node or research locked
     # This part is speculative as we haven't found explicit unlock data in the mod files
     # But we can allow for manual overrides or future expansion

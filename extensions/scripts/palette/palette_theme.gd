@@ -1,7 +1,3 @@
-# ==============================================================================
-# Taj's Command Palette - Palette Theme
-# Description: Shared colors, dimensions, and style factories
-# ==============================================================================
 class_name TajsModPaletteTheme
 extends RefCounted
 

@@ -1,7 +1,3 @@
-# ==============================================================================
-# Command Palette - Core Services Helper
-# Description: Routes notifications, sound, and clipboard through Core when available
-# ==============================================================================
 extends RefCounted
 
 const CORE_META_KEY := "TajsCore"

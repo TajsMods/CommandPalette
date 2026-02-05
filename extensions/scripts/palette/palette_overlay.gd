@@ -1,7 +1,3 @@
-# ==============================================================================
-# Command Palette - Palette Overlay
-# Description: Main UI for the command palette
-# ==============================================================================
 class_name TajsModPaletteOverlay
 extends CanvasLayer
 
@@ -555,10 +551,10 @@ func _build_ui() -> void:
     panel.name = "Panel"
     panel.custom_minimum_size = Vector2(PANEL_WIDTH, PANEL_HEIGHT)
     panel.set_anchors_preset(Control.PRESET_CENTER)
-    panel.offset_left = - PANEL_WIDTH / 2
-    panel.offset_right = PANEL_WIDTH / 2
-    panel.offset_top = - PANEL_HEIGHT / 2
-    panel.offset_bottom = PANEL_HEIGHT / 2
+    panel.offset_left = - PANEL_WIDTH * 0.5
+    panel.offset_right = PANEL_WIDTH * 0.5
+    panel.offset_top = - PANEL_HEIGHT * 0.5
+    panel.offset_bottom = PANEL_HEIGHT * 0.5
 
     # Apply game theme for fonts
     if game_theme:
@@ -804,9 +800,9 @@ func _create_onboarding_hint() -> Control:
 
 
 func _create_autocomplete_row() -> Control:
-    var panel = PanelContainer.new()
-    panel.name = "AutocompleteRow"
-    panel.custom_minimum_size = Vector2(0, 20)
+    var row_panel = PanelContainer.new()
+    row_panel.name = "AutocompleteRow"
+    row_panel.custom_minimum_size = Vector2(0, 20)
 
     var style = StyleBoxFlat.new()
     style.bg_color = Color(0.12, 0.18, 0.24, 0.9)
@@ -817,11 +813,11 @@ func _create_autocomplete_row() -> Control:
     style.content_margin_right = 12
     style.content_margin_top = 4
     style.content_margin_bottom = 4
-    panel.add_theme_stylebox_override("panel", style)
+    row_panel.add_theme_stylebox_override("panel", style)
 
     var vbox = VBoxContainer.new()
     vbox.add_theme_constant_override("separation", 2)
-    panel.add_child(vbox)
+    row_panel.add_child(vbox)
 
     var header = HBoxContainer.new()
     header.add_theme_constant_override("separation", 8)
@@ -850,7 +846,7 @@ func _create_autocomplete_row() -> Control:
     _autocomplete_text.add_theme_color_override("default_color", Color(0.9, 0.95, 1.0))
     vbox.add_child(_autocomplete_text)
 
-    return panel
+    return row_panel
 
 
 func _dismiss_onboarding() -> void:
@@ -2101,46 +2097,46 @@ func _create_help_row(item: Dictionary, index: int, detail_mode: bool) -> Contro
         return _create_help_detail_row(item, index)
 
     if item.get("_is_help_category", false):
-        var row = PanelContainer.new()
-        row.custom_minimum_size = Vector2(0, ITEM_HEIGHT - 10)
+        var category_row = PanelContainer.new()
+        category_row.custom_minimum_size = Vector2(0, ITEM_HEIGHT - 10)
 
         var style = StyleBoxFlat.new()
         style.bg_color = Color(0.08, 0.12, 0.18, 0.9)
         style.set_corner_radius_all(6)
-        row.add_theme_stylebox_override("panel", style)
+        category_row.add_theme_stylebox_override("panel", style)
 
-        var margin = MarginContainer.new()
-        margin.add_theme_constant_override("margin_left", 12)
-        margin.add_theme_constant_override("margin_right", 12)
-        row.add_child(margin)
+        var category_margin = MarginContainer.new()
+        category_margin.add_theme_constant_override("margin_left", 12)
+        category_margin.add_theme_constant_override("margin_right", 12)
+        category_row.add_child(category_margin)
 
         var label = Label.new()
         label.text = item.get("title", "Other")
         label.add_theme_font_size_override("font_size", 14)
         label.add_theme_color_override("font_color", Color(0.6, 0.75, 0.9))
-        margin.add_child(label)
+        category_margin.add_child(label)
 
-        return row
+        return category_row
 
-    var row = PanelContainer.new()
-    row.custom_minimum_size = Vector2(0, ITEM_HEIGHT + 6)
+    var entry_row = PanelContainer.new()
+    entry_row.custom_minimum_size = Vector2(0, ITEM_HEIGHT + 6)
 
     var row_style = StyleBoxFlat.new()
     row_style.bg_color = Color(0.1, 0.12, 0.16, 0.3)
     row_style.set_corner_radius_all(6)
-    row.add_theme_stylebox_override("panel", row_style)
+    entry_row.add_theme_stylebox_override("panel", row_style)
 
-    row.mouse_entered.connect(func(): _on_item_hover(index))
-    row.gui_input.connect(func(event): _on_item_click(event, index))
+    entry_row.mouse_entered.connect(func(): _on_item_hover(index))
+    entry_row.gui_input.connect(func(event): _on_item_click(event, index))
 
-    var margin = MarginContainer.new()
-    margin.add_theme_constant_override("margin_left", 12)
-    margin.add_theme_constant_override("margin_right", 12)
-    row.add_child(margin)
+    var entry_margin = MarginContainer.new()
+    entry_margin.add_theme_constant_override("margin_left", 12)
+    entry_margin.add_theme_constant_override("margin_right", 12)
+    entry_row.add_child(entry_margin)
 
     var vbox = VBoxContainer.new()
     vbox.add_theme_constant_override("separation", 2)
-    margin.add_child(vbox)
+    entry_margin.add_child(vbox)
 
     var header = HBoxContainer.new()
     header.add_theme_constant_override("separation", 8)
@@ -2170,7 +2166,7 @@ func _create_help_row(item: Dictionary, index: int, detail_mode: bool) -> Contro
     desc.autowrap_mode = TextServer.AUTOWRAP_WORD
     vbox.add_child(desc)
 
-    return row
+    return entry_row
 
 
 func _create_help_detail_row(item: Dictionary, index: int) -> Control:
@@ -2360,9 +2356,9 @@ func _format_autocomplete_usage_hint(meta: Dictionary) -> String:
     if usage.is_empty():
         return ""
 
-    var name = str(meta.get("display_name", "")).strip_edges()
-    if not name.is_empty() and usage.begins_with(name):
-        var rest = usage.substr(name.length()).strip_edges()
+    var display_name = str(meta.get("display_name", "")).strip_edges()
+    if not display_name.is_empty() and usage.begins_with(display_name):
+        var rest = usage.substr(display_name.length()).strip_edges()
         if not rest.is_empty():
             return tr("Expects") + ": " + rest
 
@@ -2489,7 +2485,7 @@ func _cycle_autocomplete(direction: int) -> void:
     _autocomplete_index = wrapi(_autocomplete_index + direction, 0, _autocomplete_suggestions.size())
     _refresh_autocomplete_row(search_input.text.strip_edges())
 
-func _on_search_changed(new_text: String) -> void:
+func _on_search_changed(_new_text: String) -> void:
     _debounce_timer.stop()
     _debounce_timer.start()
 
@@ -2817,9 +2813,9 @@ func _execute_note_picker_selection(item: Dictionary) -> void:
 func _execute_calculator_action(item: Dictionary) -> void:
     # Handle history item click - fill in the expression
     if item.get("_is_calc_history", false):
-        var expr = item.get("_calc_expr", "")
-        if not expr.is_empty():
-            search_input.text = "= " + expr
+        var history_expr = item.get("_calc_expr", "")
+        if not history_expr.is_empty():
+            search_input.text = "= " + history_expr
             search_input.caret_column = search_input.text.length()
             _perform_search()
             CoreServices.play_sound("click")
@@ -2832,15 +2828,15 @@ func _execute_calculator_action(item: Dictionary) -> void:
         return
 
     # Add to history (most recent first)
-    var expr = item.get("_calc_expr", "")
-    if not expr.is_empty():
+    var calc_expr = item.get("_calc_expr", "")
+    if not calc_expr.is_empty():
         # Remove duplicate if exists
         for i in range(_calc_history.size() - 1, -1, -1):
-            if _calc_history[i].expr == expr:
+            if _calc_history[i].expr == calc_expr:
                 _calc_history.remove_at(i)
 
         # Add to front
-        _calc_history.insert(0, {"expr": expr, "result": _calc_result})
+        _calc_history.insert(0, {"expr": calc_expr, "result": _calc_result})
 
         # Limit history size
         while _calc_history.size() > CALC_MAX_HISTORY:
@@ -2883,8 +2879,8 @@ func _execute_help_selection(item: Dictionary) -> void:
 func _perform_node_search(query: String) -> void:
     if not node_metadata_service:
         # Show error item
-        var items: Array[Dictionary] = []
-        items.append({
+        var error_items: Array[Dictionary] = []
+        error_items.append({
             "id": "_node_def_error",
             "title": "Service Not Initialized",
             "hint": "Please restart the game to use this feature.",
@@ -2894,7 +2890,7 @@ func _perform_node_search(query: String) -> void:
             "_is_node_def_result": true,
             "_node_id": ""
         })
-        _display_items(items)
+        _display_items(error_items)
         breadcrumb_label.text = "?? Node Definitions: Error"
         return
 

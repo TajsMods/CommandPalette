@@ -1,7 +1,3 @@
-# ==============================================================================
-# Command Palette - Palette Mode Base
-# Description: Abstract base class for palette modes
-# ==============================================================================
 class_name TajsModPaletteModeBase
 extends RefCounted
 
@@ -79,5 +75,5 @@ func create_custom_row(item: Dictionary, index: int) -> Control:
 
 ## Check if this mode wants to handle a specific input event
 ## Override for mode-specific input handling
-func handle_input(event: InputEvent) -> bool:
+func handle_input(_event: InputEvent) -> bool:
     return false

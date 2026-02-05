@@ -1,7 +1,3 @@
-# ==============================================================================
-# Command Palette - Calculator Mode
-# Description: Inline math expression evaluation for the palette
-# ==============================================================================
 class_name TajsModCalculatorMode
 extends "res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/modes/mode_base.gd"
 
@@ -49,9 +45,9 @@ func get_items() -> Array[Dictionary]:
 func execute_selection(item: Dictionary) -> bool:
     # Handle history item click - fill in the expression
     if item.get("_is_calc_history", false):
-        var expr = item.get("_calc_expr", "")
-        if not expr.is_empty():
-            action_completed.emit({"action": "fill_expression", "text": "= " + expr})
+        var history_expr = item.get("_calc_expr", "")
+        if not history_expr.is_empty():
+            action_completed.emit({"action": "fill_expression", "text": "= " + history_expr})
             CoreServices.play_sound("click")
         return true
     
@@ -61,15 +57,15 @@ func execute_selection(item: Dictionary) -> bool:
         return true
     
     # Add to history (most recent first)
-    var expr = item.get("_calc_expr", "")
-    if not expr.is_empty():
+    var calc_expr = item.get("_calc_expr", "")
+    if not calc_expr.is_empty():
         # Remove duplicate if exists
         for i in range(_history.size() - 1, -1, -1):
-            if _history[i].expr == expr:
+            if _history[i].expr == calc_expr:
                 _history.remove_at(i)
         
         # Add to front
-        _history.insert(0, {"expr": expr, "result": _result})
+        _history.insert(0, {"expr": calc_expr, "result": _result})
         
         # Limit history size
         while _history.size() > MAX_HISTORY:

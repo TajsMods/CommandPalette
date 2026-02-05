@@ -1,7 +1,3 @@
-# ==============================================================================
-# Command Palette - Note Picker Mode
-# Description: Jump to Note feature
-# ==============================================================================
 class_name TajsModNotePickerMode
 extends "res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/modes/mode_base.gd"
 

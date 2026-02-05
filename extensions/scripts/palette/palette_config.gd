@@ -1,7 +1,3 @@
-# ==============================================================================
-# Command Palette - Palette Config Wrapper (Compatibility)
-# Description: Legacy wrapper that forwards to Core command palette settings
-# ==============================================================================
 class_name TajsModPaletteConfig
 extends "res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/palette_settings.gd"
 

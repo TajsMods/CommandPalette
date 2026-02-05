@@ -1,7 +1,3 @@
-# ==============================================================================
-# Command Palette - Default Commands
-# Description: Core command set for the palette (works with Core only)
-# ==============================================================================
 class_name TajsModDefaultCommands
 extends RefCounted
 

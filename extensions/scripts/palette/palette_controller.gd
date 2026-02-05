@@ -1,7 +1,3 @@
-# ==============================================================================
-# Command Palette - Palette Controller
-# Description: Orchestrates palette input and lifecycle
-# ==============================================================================
 class_name TajsModPaletteController
 extends Node
 
@@ -393,11 +389,11 @@ class NodeMetadataService extends RefCounted:
             # Try to get translated description from guides
             var desc_key = fm.get("description_key", "")
             if desc_key != "":
-                var translated = tr(desc_key)
+                var translated_desc = tr(desc_key)
                 # Only use if translation exists (doesn't return the key itself)
-                if translated != desc_key:
-                    meta.description = translated
-            return meta
+                if translated_desc != desc_key:
+                    meta.description = translated_desc
+                return meta
 
         # 2. Check Data.resources (for resources that might be modifiers)
         if Data.resources.has(modifier_id):
@@ -421,9 +417,9 @@ class NodeMetadataService extends RefCounted:
 
         # 4. Fallback: try guide translation key pattern
         var guide_key = "guide_file_modifiers_" + id_lower
-        var translated = tr(guide_key)
-        if translated != guide_key:
-            meta.description = translated
+        var translated_guide = tr(guide_key)
+        if translated_guide != guide_key:
+            meta.description = translated_guide
 
         return meta
 
@@ -443,7 +439,7 @@ class NodeMetadataService extends RefCounted:
                 return
         list.append(port)
 
-    func _get_unlock_info(node_id: String, data: Dictionary) -> Dictionary:
+    func _get_unlock_info(_node_id: String, data: Dictionary) -> Dictionary:
         var info = {"status": "Available"}
 
         # Check 'requirement' field (format: "research.X", "upgrade.X", "perk.X", "")
@@ -516,7 +512,7 @@ func _register_default_commands() -> void:
     DefaultCommandsScript.register_all(registry, refs)
 
 
-func _input(event: InputEvent) -> void:
+func _input(_event: InputEvent) -> void:
     # NOTE: Keybind handling (MMB, XButton1, XButton2) is now centralized in KeybindsManager
     # This function is kept for any future input handling that shouldn't be rebindable
     pass

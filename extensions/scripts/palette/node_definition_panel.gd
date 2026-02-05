@@ -1,8 +1,3 @@
-# ==============================================================================
-# Taj's Mod - Upload Labs
-# Node Definition Panel - UI for displaying node details
-# Author: TajemnikTV
-# ==============================================================================
 class_name TajsModNodeDefinitionPanel
 extends PanelContainer
 
@@ -48,6 +43,10 @@ func _init() -> void:
 
 func _input(event: InputEvent) -> void:
     if not visible:
+        return
+    if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+        close_requested.emit()
+        get_viewport().set_input_as_handled()
         return
     # Handle mouse back button
     if event is InputEventMouseButton:
@@ -222,7 +221,7 @@ func _build_ui() -> void:
     _shop_button = Button.new()
     _shop_button.text = "Open in Shop"
     _shop_button.visible = false
-    # _shop_button.pressed.connect(_on_shop_pressed) # To be implemented if needed
+    _shop_button.pressed.connect(_on_shop_pressed)
     footer_hbox.add_child(_shop_button)
     
     # Back Button
@@ -328,6 +327,7 @@ func display_node(data: Dictionary) -> void:
     var status = unlock.get("status", "Available")
     
     if status == "Research Required":
+        _shop_button.visible = false
         var r_name = unlock.get("research_name", unlock.get("research_id", "Unknown"))
         var r_cost = unlock.get("research_cost", 0)
         var r_currency = unlock.get("research_currency", "research")
@@ -339,6 +339,7 @@ func display_node(data: Dictionary) -> void:
             _unlock_label.text = "🔒 Research: " + r_name
         _unlock_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.6))
     elif status == "Shop Purchase":
+        _shop_button.visible = true
         var price = unlock.get("price", 0)
         var upgrade_name = unlock.get("upgrade_name", unlock.get("upgrade_id", ""))
         # Translate internal name to friendly display name
@@ -349,12 +350,14 @@ func display_node(data: Dictionary) -> void:
             _unlock_label.text = "🛒 Shop: %s" % _format_number(price)
         _unlock_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.5))
     elif status == "Perk Required":
+        _shop_button.visible = false
         var perk_name = unlock.get("perk_name", unlock.get("perk_id", "Unknown"))
         # Translate internal name to friendly display name
         perk_name = tr(perk_name)
         _unlock_label.text = "⭐ Perk: " + perk_name
         _unlock_label.add_theme_color_override("font_color", Color(0.9, 0.7, 1.0))
     else:
+        _shop_button.visible = false
         _unlock_label.text = "🔓 Available from start"
         _unlock_label.add_theme_color_override("font_color", Color(0.6, 1.0, 0.6))
 
@@ -446,13 +449,13 @@ func _add_port_row(container: Control, port: Dictionary) -> void:
             # 0. Pre-process PascalCase/CamelCase (e.g. "TextNeuron" -> "Text Neuron")
             var spaced_label = ""
             for i in range(label_str.length()):
-                var char = label_str[i]
+                var label_char = label_str[i]
                 # Insert space before capital letters if it's not the start and previous char isn't a space
-                if char == char.to_upper() and char != char.to_lower() and i > 0:
+                if label_char == label_char.to_upper() and label_char != label_char.to_lower() and i > 0:
                     # Safe check for previous char since we're using String
                     if label_str[i - 1] != " " and label_str[i - 1] != "_" and label_str[i - 1] != "-":
                         spaced_label += " "
-                spaced_label += char
+                spaced_label += label_char
             
             var clean_label = spaced_label.to_lower().replace("-", "_")
             
@@ -571,9 +574,9 @@ func _guess_file_resource_id() -> String:
         if str(res.get("color", "")).to_lower() == "green":
             score += 20
         
-        var key = str(id).to_lower()
-        var name = str(res.get("name", id)).to_lower()
-        if "file" in key or "file" in name:
+        var res_key = str(id).to_lower()
+        var res_name = str(res.get("name", id)).to_lower()
+        if "file" in res_key or "file" in res_name:
             score += 30
         
         var desc = str(res.get("description", "")).to_lower()
@@ -621,8 +624,8 @@ func _add_modifier_row(container: Control, modifier: Dictionary) -> void:
     row.add_theme_color_override("font_color", Color(0.7, 0.85, 1.0))
     row.add_theme_color_override("font_hover_color", Color(0.9, 0.95, 1.0))
     
-    var name = str(modifier.get("name", modifier.get("id", "Modifier")))
-    row.text = name
+    var modifier_name = str(modifier.get("name", modifier.get("id", "Modifier")))
+    row.text = modifier_name
     
     var desc = str(modifier.get("description", "")).strip_edges()
     if not desc.is_empty():
@@ -643,3 +646,10 @@ func _add_modifier_row(container: Control, modifier: Dictionary) -> void:
 func _clear_container(container: Control) -> void:
     for child in container.get_children():
         child.queue_free()
+
+
+func _on_shop_pressed() -> void:
+    if _current_node_id.is_empty():
+        return
+    open_in_shop_requested.emit(_current_node_id)
+    CoreServices.play_sound("click")

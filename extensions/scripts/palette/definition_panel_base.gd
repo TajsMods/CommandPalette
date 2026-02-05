@@ -1,7 +1,3 @@
-# ==============================================================================
-# Command Palette - Definition Panel Base
-# Description: Shared base class for all definition panels
-# ==============================================================================
 class_name TajsModDefinitionPanelBase
 extends Control
 

@@ -1,7 +1,3 @@
-# ==============================================================================
-# Command Palette - Calculator
-# Description: Safe math expression evaluator using shunting-yard algorithm
-# ==============================================================================
 class_name TajsModCalculator
 extends RefCounted
 
@@ -261,8 +257,8 @@ static func _evaluate_rpn(rpn: Array) -> Dictionary:
                 if op == "u-":
                     if stack.is_empty():
                         return {"success": false, "value": 0.0, "error": "Invalid expression"}
-                    var a = stack.pop_back()
-                    stack.append(-a)
+                    var unary_value = stack.pop_back()
+                    stack.append(-unary_value)
                     continue
                 
                 # Binary operators

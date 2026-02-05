@@ -1,7 +1,3 @@
-# ==============================================================================
-# Command Palette - Fuzzy Search
-# Description: Efficient fuzzy matching for command palette
-# ==============================================================================
 class_name TajsModFuzzySearch
 extends RefCounted
 

@@ -1,7 +1,3 @@
-# ==============================================================================
-# Command Palette - Context Provider
-# Description: Provides current game/mod state for command visibility
-# ==============================================================================
 class_name TajsModContextProvider
 extends RefCounted
 

@@ -1,7 +1,3 @@
-# ==============================================================================
-# Command Palette - Picker Mode
-# Description: Node picker for wire-drop feature
-# ==============================================================================
 class_name TajsModPickerMode
 extends "res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/modes/mode_base.gd"
 

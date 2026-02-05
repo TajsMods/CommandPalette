@@ -1,7 +1,3 @@
-# ==============================================================================
-# Command Palette - Core Logging Helper
-# Description: Routes logging through Core when available
-# ==============================================================================
 extends RefCounted
 
 const CORE_META_KEY := "TajsCore"

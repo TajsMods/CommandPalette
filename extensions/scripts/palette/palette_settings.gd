@@ -1,7 +1,3 @@
-# ==============================================================================
-# Command Palette - Settings Wrapper
-# Description: Thin wrapper over Core command palette settings
-# ==============================================================================
 class_name TajsCommandPaletteSettings
 extends RefCounted
 

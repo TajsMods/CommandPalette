@@ -1,7 +1,3 @@
-# ==============================================================================
-# Command Palette - Resource Definition Panel
-# Description: UI for displaying resource/connector details
-# ==============================================================================
 class_name TajsModResourceDefinitionPanel
 extends PanelContainer
 

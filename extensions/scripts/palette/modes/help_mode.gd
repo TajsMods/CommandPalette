@@ -1,7 +1,3 @@
-# ==============================================================================
-# Command Palette - Help Mode
-# Description: Command reference and documentation for the palette
-# ==============================================================================
 class_name TajsModHelpMode
 extends "res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/modes/mode_base.gd"
 

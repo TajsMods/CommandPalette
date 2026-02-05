@@ -1,7 +1,3 @@
-# ==============================================================================
-# Command Palette - Modifier Definition Panel
-# Description: UI for displaying file modifier details
-# ==============================================================================
 class_name TajsModModifierDefinitionPanel
 extends PanelContainer
 
