@@ -57,6 +57,7 @@ func _register_settings() -> void:
         MOD_ID + ".max_recents": {
             "type": "int",
             "default": 10,
+            "label": "Max Recent Commands",
             "description": "Max Recent Commands"
         }
     })
