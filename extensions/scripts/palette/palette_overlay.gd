@@ -2690,6 +2690,18 @@ func _execute_selected() -> void:
 
     var item = _displayed_items[_selected_index]
 
+    # Defensive fallback: if picker reference payload exists, honor it even when
+    # mode flags are out of sync to avoid treating instance IDs as command IDs.
+    if item.has("_group_ref"):
+        _execute_group_selection(item)
+        return
+    if item.has("_note_ref"):
+        _execute_note_picker_selection(item)
+        return
+    if item.has("_node_id"):
+        _execute_picker_selection(item)
+        return
+
     # Handle picker mode - delegate to mode handler
     if _picker_mode and _picker_mode_handler:
         if _picker_mode_handler.execute_selection(item):

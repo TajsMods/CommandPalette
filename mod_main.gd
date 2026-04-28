@@ -29,6 +29,11 @@ func _init() -> void:
     _setup_settings()
     _init_controller()
     _register_keybinds()
+
+
+func _ready() -> void:
+    if _core == null:
+        return
     _register_events()
 
 
