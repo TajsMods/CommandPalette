@@ -2,7 +2,7 @@
     "name": "CommandPalette",
     "display_name": "Command Palette",
     "namespace": "TajemnikTV",
-    "version_number": "2.0.1",
+    "version_number": "2.0.2",
     "description": "Command palette UI powered by Taj's Core command registry.",
     "website_url": "https://github.com/TajsMods/CommandPalette",
     "dependencies": ["TajemnikTV-Core"],
