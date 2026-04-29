@@ -58,14 +58,18 @@ func _register_module() -> void:
 func _register_settings() -> void:
     if _core.settings == null:
         return
-    _core.settings.register_schema(MOD_ID, {
+    var schema := {
         MOD_ID + ".max_recents": {
             "type": "int",
             "default": 10,
             "label": "Max Recent Commands",
             "description": "Max Recent Commands"
         }
-    })
+    }
+    if _core.has_method("register_settings_schema"):
+        _core.register_settings_schema(MOD_ID, schema)
+    else:
+        _core.settings.register_schema(MOD_ID, schema)
 
 
 func _setup_settings() -> void:
