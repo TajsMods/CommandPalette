@@ -9,6 +9,7 @@ const CoreServices = preload("res://mods-unpacked/TajemnikTV-CommandPalette/exte
 ## Register all default commands
 static func register_all(registry, refs: Dictionary) -> void:
     var controller = refs.get("controller")
+    var category_infos: Array[Dictionary] = _get_runtime_categories()
 
     # ==========================================
     # ROOT CATEGORIES
@@ -159,14 +160,13 @@ static func register_all(registry, refs: Dictionary) -> void:
     # NODES - CATEGORY SUBCATEGORIES
     # ==========================================
 
-    _register_node_category(registry, "network", "Network", "connections")
-    _register_node_category(registry, "cpu", "CPU", "bits")
-    _register_node_category(registry, "gpu", "GPU", "contrast")
-    _register_node_category(registry, "research", "Research", "atom")
-    _register_node_category(registry, "factory", "Factory", "box")
-    _register_node_category(registry, "hacking", "Hacking", "bug")
-    _register_node_category(registry, "coding", "Coding", "code")
-    _register_node_category(registry, "utility", "Utility", "cog")
+    for category_info: Dictionary in category_infos:
+        _register_node_category(
+            registry,
+            str(category_info.get("id", "")),
+            str(category_info.get("title", "")),
+            str(category_info.get("icon", "cog"))
+        )
 
     # ==========================================
     # NODES - UPGRADE & WIRE COMMANDS
@@ -222,6 +222,7 @@ static func register_all(registry, refs: Dictionary) -> void:
     })
 
     CoreLog.log_info(LOG_NAME, "Registered %d default commands" % registry.get_count())
+    _log_category_diagnostics(category_infos)
 
 
 ## Helper to register a node category with select and upgrade commands
@@ -389,3 +390,80 @@ static func _collect_resource_containers(node: Node, containers: Array[ResourceC
         containers.append(node as ResourceContainer)
     for child in node.get_children():
         _collect_resource_containers(child, containers)
+
+static func _get_runtime_categories() -> Array[Dictionary]:
+    var icon_by_category := {
+        "network": "connections",
+        "cpu": "bits",
+        "gpu": "contrast",
+        "research": "atom",
+        "ai": "brain",
+        "factory": "box",
+        "power": "lightning",
+        "hacking": "bug",
+        "coding": "code",
+        "utility": "cog"
+    }
+    var title_by_category := {
+        "network": "Network",
+        "cpu": "CPU",
+        "gpu": "GPU",
+        "research": "Research",
+        "ai": "AI",
+        "factory": "Factory",
+        "power": "Power",
+        "hacking": "Hacking",
+        "coding": "Coding",
+        "utility": "Utility"
+    }
+    var seen: Dictionary = {}
+    var categories: Array[Dictionary] = []
+    if Data != null and Data.windows != null:
+        for window_id: Variant in Data.windows:
+            var window_data: Dictionary = Data.windows.get(window_id, {})
+            var category_id: String = str(window_data.get("category", "")).strip_edges()
+            if category_id.is_empty() or seen.has(category_id):
+                continue
+            seen[category_id] = true
+            categories.append({
+                "id": category_id,
+                "title": title_by_category.get(category_id, category_id.capitalize()),
+                "icon": icon_by_category.get(category_id, "cog")
+            })
+    categories.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+        return str(a.get("title", "")) < str(b.get("title", ""))
+    )
+    return categories
+
+static func _log_category_diagnostics(category_infos: Array[Dictionary]) -> void:
+    if not _is_debug_enabled():
+        return
+    var category_ids: Array[String] = []
+    for info: Dictionary in category_infos:
+        category_ids.append(str(info.get("id", "")))
+    var generated_category_commands: int = category_infos.size() * 3
+    var legacy_ok: bool = (
+        category_ids.has("network") and category_ids.has("cpu") and category_ids.has("gpu") and
+        category_ids.has("research") and category_ids.has("factory") and category_ids.has("hacking") and
+        category_ids.has("coding") and category_ids.has("utility")
+    )
+    CoreLog.log_info(LOG_NAME, "Compatibility diagnostics: discovered_categories=%s generated_category_commands=%d ai_generated=%s power_generated=%s" % [
+        category_ids,
+        generated_category_commands,
+        category_ids.has("ai"),
+        category_ids.has("power")
+    ])
+    CoreLog.log_info(LOG_NAME, "Compatibility diagnostics: legacy_categories_present=%s" % legacy_ok)
+
+static func _is_debug_enabled() -> bool:
+    if not Engine.has_meta("TajsCore"):
+        return false
+    var core = Engine.get_meta("TajsCore")
+    if core == null:
+        return false
+    var core_settings = core.get("settings")
+    if core_settings == null:
+        return false
+    if not core_settings.has_method("get_bool"):
+        return false
+    return core_settings.get_bool("core.debug", core_settings.get_bool("core.debug_log", false))

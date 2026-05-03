@@ -10,6 +10,7 @@ var _node_cache: Array[Dictionary] = []
 var _node_details_cache: Dictionary = {}
 var _cache_built: bool = false
 var _fuzzy_search: RefCounted
+var _zero_port_nodes: Array[String] = []
 
 func _init() -> void:
     _fuzzy_search = FuzzySearch.new()
@@ -56,21 +57,24 @@ func find_nodes(query: String) -> Array[Dictionary]:
 ## Get detailed information for a specific node
 ## Includes inputs/outputs, full description, etc.
 func get_node_details(node_id: String) -> Dictionary:
-    CoreLog.log_info(LOG_NAME, "DEBUG: get_node_details called for '%s'" % node_id)
+    _log_debug("get_node_details called for '%s'" % node_id)
     
     # Return cached details if available
     if _node_details_cache.has(node_id):
-        CoreLog.log_info(LOG_NAME, "DEBUG: returning cached details for '%s'" % node_id)
+        _log_debug("returning cached details for '%s'" % node_id)
         return _node_details_cache[node_id]
     
     # Fetch from Data.windows
     if not Data.windows.has(node_id):
-        CoreLog.log_info(LOG_NAME, "DEBUG: '%s' not found in Data.windows" % node_id)
+        _log_debug("'%s' not found in Data.windows" % node_id)
         return {}
     
     var window_data = Data.windows[node_id]
-    CoreLog.log_info(LOG_NAME, "DEBUG: Extracting details for '%s'" % node_id)
+    _log_debug("Extracting details for '%s'" % node_id)
     var details = _extract_node_details(node_id, window_data)
+    if details.get("inputs", []).is_empty() and details.get("outputs", []).is_empty():
+        if not _zero_port_nodes.has(node_id):
+            _zero_port_nodes.append(node_id)
     
     # Cache it
     _node_details_cache[node_id] = details
@@ -79,6 +83,7 @@ func get_node_details(node_id: String) -> Dictionary:
 ## Build the initial cache of node summaries
 func _build_cache() -> void:
     _node_cache.clear()
+    _zero_port_nodes.clear()
     
     if not Data or not "windows" in Data:
         CoreLog.log_error(LOG_NAME, "Data.windows not found")
@@ -104,6 +109,10 @@ func _build_cache() -> void:
     
     _cache_built = true
     CoreLog.log_info(LOG_NAME, "Built node metadata cache for %d nodes" % _node_cache.size())
+    _log_debug("Node metadata diagnostics: zero_port_nodes=%d sample=%s" % [
+        _zero_port_nodes.size(),
+        _zero_port_nodes.slice(0, min(10, _zero_port_nodes.size()))
+    ])
 
 ## Extract detailed info including ports by instantiating the scene
 ## This is expensive, so it should be cached
@@ -122,7 +131,8 @@ func _extract_node_details(node_id: String, data: Dictionary) -> Dictionary:
     
     # Try to get scene-based details (ports)
     if data.has("scene"):
-        var scene_path = "res://scenes/windows/" + data.scene + ".tscn"
+        var scene_info: Dictionary = _resolve_window_scene_path(data)
+        var scene_path: String = str(scene_info.get("resolved", ""))
         details.scene_path = scene_path
         
         if ResourceLoader.exists(scene_path):
@@ -132,21 +142,49 @@ func _extract_node_details(node_id: String, data: Dictionary) -> Dictionary:
                 if instance:
                     _collect_ports(instance, details)
                     instance.queue_free()
+            else:
+                _log_debug("Scene resolution failed for '%s': scene=%s resolved=%s attempted=%s reason=load_failed" % [
+                    node_id,
+                    str(scene_info.get("original", "")),
+                    scene_path,
+                    str(scene_info.get("attempted", []))
+                ])
+        else:
+            _log_debug("Scene resolution failed for '%s': scene=%s resolved=%s attempted=%s reason=missing_resource" % [
+                node_id,
+                str(scene_info.get("original", "")),
+                scene_path,
+                str(scene_info.get("attempted", []))
+            ])
     
     # Add unlock info if available (heuristic-based for now)
     details.unlock_info = _get_unlock_info(node_id, data)
     
     return details
 
+func _resolve_window_scene_path(data: Dictionary) -> Dictionary:
+    var scene_value: String = str(data.get("scene", ""))
+    if scene_value.is_empty():
+        return {"original": scene_value, "resolved": "", "attempted": []}
+    var attempted: Array[String] = []
+    if scene_value.begins_with("res://"):
+        var resolved_abs: String = scene_value if scene_value.ends_with(".tscn") else (scene_value + ".tscn")
+        attempted.append(resolved_abs)
+        return {"original": scene_value, "resolved": resolved_abs, "attempted": attempted}
+    var resolved_rel: String = "res://scenes/windows/" + scene_value + ".tscn"
+    attempted.append(resolved_rel)
+    attempted.append(scene_value)
+    return {"original": scene_value, "resolved": resolved_rel, "attempted": attempted}
+
 ## Helper to recursively collect port info
 func _collect_ports(node: Node, details: Dictionary) -> void:
     # DEBUG LOGGING (Unconditional)
-    if "Neuron" in node.name:
-        CoreLog.log_info(LOG_NAME, "DEBUG: Visiting node '%s'" % node.name)
-        CoreLog.log_info(LOG_NAME, "  - Script: %s" % str(node.get_script()))
-        CoreLog.log_info(LOG_NAME, "  - Has default_resource? %s" % str(node.get("default_resource") != null))
+    if _is_debug_enabled() and "Neuron" in node.name:
+        _log_debug("Visiting node '%s'" % node.name)
+        _log_debug("  - Script: %s" % str(node.get_script()))
+        _log_debug("  - Has default_resource? %s" % str(node.get("default_resource") != null))
         if node.get("default_resource") != null:
-             CoreLog.log_info(LOG_NAME, "  - Value: %s" % str(node.get("default_resource")))
+             _log_debug("  - Value: %s" % str(node.get("default_resource")))
 
     # Use duck typing/property check instead of class_name to avoid potential scope issues
     # We check for a property unique enough to ResourceContainer
@@ -160,11 +198,11 @@ func _collect_ports(node: Node, details: Dictionary) -> void:
         var default_res = node.get("default_resource")
         
         # DEBUG LOGGING
-        if "Neuron" in node.name:
-            CoreLog.log_info(LOG_NAME, "DEBUG: Found node %s" % node.name)
-            CoreLog.log_info(LOG_NAME, "  - default_resource: %s" % str(default_res))
-            CoreLog.log_info(LOG_NAME, "  - override_connector: %s" % str(shape))
-            CoreLog.log_info(LOG_NAME, "  - script: %s" % str(node.get_script()))
+        if _is_debug_enabled() and "Neuron" in node.name:
+            _log_debug("Found node %s" % node.name)
+            _log_debug("  - default_resource: %s" % str(default_res))
+            _log_debug("  - override_connector: %s" % str(shape))
+            _log_debug("  - script: %s" % str(node.get_script()))
         
 
         if shape.is_empty() and default_res != "" and Data.resources.has(default_res):
@@ -178,8 +216,8 @@ func _collect_ports(node: Node, details: Dictionary) -> void:
         var rc_default_resource = default_res
         
         if not shape.is_empty():
-            if "Neuron" in node.name:
-                 CoreLog.log_info(LOG_NAME, "DEBUG: Adding port info with ID: %s" % str(rc_default_resource))
+            if _is_debug_enabled() and "Neuron" in node.name:
+                 _log_debug("Adding port info with ID: %s" % str(rc_default_resource))
             var port_info = {
                 "shape": shape,
                 "color": color,
@@ -222,3 +260,20 @@ func _get_unlock_info(_node_id: String, data: Dictionary) -> Dictionary:
             info.research_name = Data.research[data.research_id].get("name", data.research_id)
             
     return info
+
+func _is_debug_enabled() -> bool:
+    if not Engine.has_meta("TajsCore"):
+        return false
+    var core = Engine.get_meta("TajsCore")
+    if core == null:
+        return false
+    var core_settings = core.get("settings")
+    if core_settings == null:
+        return false
+    if not core_settings.has_method("get_bool"):
+        return false
+    return core_settings.get_bool("core.debug", core_settings.get_bool("core.debug_log", false))
+
+func _log_debug(message: String) -> void:
+    if _is_debug_enabled():
+        CoreLog.log_info(LOG_NAME, "DEBUG: %s" % message)

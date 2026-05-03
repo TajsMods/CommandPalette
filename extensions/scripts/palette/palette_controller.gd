@@ -111,6 +111,7 @@ class NodeMetadataService extends RefCounted:
     var _node_details_cache: Dictionary = {}
     var _cache_built: bool = false
     var _node_filter # Reference to NodeCompatibilityFilter
+    var _zero_port_nodes: Array[String] = []
 
     func _init(filter_ref) -> void:
         _node_filter = filter_ref
@@ -194,12 +195,16 @@ class NodeMetadataService extends RefCounted:
 
         var window_data = Data.windows[node_id]
         var details = _extract_node_details(node_id, window_data)
+        if details.get("inputs", []).is_empty() and details.get("outputs", []).is_empty():
+            if not _zero_port_nodes.has(node_id):
+                _zero_port_nodes.append(node_id)
         _node_details_cache[node_id] = details
         return details
 
     ## Build the initial cache of node summaries
     func _build_cache() -> void:
         _node_cache.clear()
+        _zero_port_nodes.clear()
 
         if not Data or not "windows" in Data:
             CoreLog.log_error(LOG_NAME, "Data.windows not found")
@@ -222,6 +227,10 @@ class NodeMetadataService extends RefCounted:
 
         _cache_built = true
         CoreLog.log_info(LOG_NAME, "Built node metadata cache for %d nodes" % _node_cache.size())
+        _log_debug("Node metadata diagnostics: zero_port_nodes=%d sample=%s" % [
+            _zero_port_nodes.size(),
+            _zero_port_nodes.slice(0, min(10, _zero_port_nodes.size()))
+        ])
 
     func _extract_node_details(node_id: String, data: Dictionary) -> Dictionary:
         var details = {
@@ -252,6 +261,23 @@ class NodeMetadataService extends RefCounted:
         details.modifiers_added = _extract_modifiers(node_id, data)
         return details
 
+    func _is_debug_enabled() -> bool:
+        if not Engine.has_meta("TajsCore"):
+            return false
+        var core = Engine.get_meta("TajsCore")
+        if core == null:
+            return false
+        var core_settings = core.get("settings")
+        if core_settings == null:
+            return false
+        if not core_settings.has_method("get_bool"):
+            return false
+        return core_settings.get_bool("core.debug", core_settings.get_bool("core.debug_log", false))
+
+    func _log_debug(message: String) -> void:
+        if _is_debug_enabled():
+            CoreLog.log_info(LOG_NAME, "DEBUG: %s" % message)
+
     # Hardcoded mapping of nodes to the modifiers they add
     # This is necessary because modifiers are applied programmatically in scripts, not in JSON
     const NODE_MODIFIERS = {
@@ -263,7 +289,7 @@ class NodeMetadataService extends RefCounted:
         "verifier": ["validated", "corrupted"],
         # Compressors
         "compressor": ["compressed"],
-        "encompressor": ["compressed", "enhanced"],
+        "lossless_compressor": ["compressed", "enhanced"],
         # Enhancers
         "enhancer": ["enhanced"],
         # Processing
