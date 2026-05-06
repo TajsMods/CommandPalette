@@ -1,4 +1,4 @@
-class_name TajsModHelpMode
+class_name TajsCommandPaletteHelpMode
 extends "res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/modes/mode_base.gd"
 
 const PaletteTheme = preload("res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/palette_theme.gd")

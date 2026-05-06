@@ -1,14 +1,15 @@
-class_name TajsModGroupPickerMode
+class_name TajsCommandPaletteGroupPickerMode
 extends "res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/modes/mode_base.gd"
 
 const PaletteTheme = preload("res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/palette_theme.gd")
 const CoreServices = preload("res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/common/core_services.gd")
 
-## Emitted when a group is selected
-signal group_selected(group)
+## Emitted when a group is selected.
+## Payload shape: {group_ref, item_id, handled}
+signal group_selected(selection: Dictionary)
 
 # State
-var _all_groups: Array = []
+var _all_groups: Array[Dictionary] = []
 var _items: Array[Dictionary] = []
 var _goto_manager = null
 
@@ -35,13 +36,14 @@ func filter(query: String) -> void:
         var filtered: Array = []
         var query_lower := query.to_lower()
         
-        for group in _all_groups:
+        for entry: Dictionary in _all_groups:
+            var group = entry.get("group_ref", null)
             if not is_instance_valid(group):
                 continue
             
-            var group_name := _get_group_name(group)
+            var group_name := _get_group_name(entry)
             if query_lower in group_name.to_lower():
-                filtered.append(group)
+                filtered.append(entry)
         
         _build_items(filtered)
     
@@ -60,7 +62,17 @@ func execute_selection(item: Dictionary) -> bool:
         request_close.emit()
         return true
     
-    group_selected.emit(group)
+    var item_id := str(item.get("_board_item_id", "group:%s" % str(group.name)))
+    var handled := false
+    var core = CoreServices._get_core()
+    if core != null and core.has_method("board_focus_item"):
+        handled = bool(core.board_focus_item(item_id, {"fit": true, "padding": 0.15}))
+
+    group_selected.emit({
+        "group_ref": group,
+        "item_id": item_id,
+        "handled": handled
+    })
     
     CoreServices.play_sound("click")
     request_close.emit()
@@ -74,20 +86,26 @@ func handle_back() -> bool:
 
 ## Setup the picker with groups
 func setup(groups: Array, goto_manager) -> void:
-    _all_groups = groups.duplicate()
     _goto_manager = goto_manager
+    _all_groups = _normalize_groups(groups)
     _build_items(_all_groups)
 
 
-func _build_items(groups: Array) -> void:
+func _build_items(groups: Array[Dictionary]) -> void:
     _items.clear()
     
-    for group in groups:
+    for entry: Dictionary in groups:
+        var group = entry.get("group_ref", null)
         if not is_instance_valid(group):
             continue
         
-        var group_name := _get_group_name(group)
-        var icon_path := _get_group_icon(group)
+        var group_name := str(entry.get("title", "")).strip_edges()
+        if group_name == "":
+            group_name = _get_group_name(entry)
+        var icon_path := str(entry.get("icon_path", "")).strip_edges()
+        if icon_path == "":
+            icon_path = _get_group_icon(entry)
+        var board_item_id := str(entry.get("item_id", "group:%s" % str(group.name)))
         
         _items.append({
             "id": str(group.get_instance_id()),
@@ -97,11 +115,13 @@ func _build_items(groups: Array) -> void:
             "icon_path": icon_path,
             "is_category": false,
             "badge": "SAFE",
-            "_group_ref": group
+            "_group_ref": group,
+            "_board_item_id": board_item_id
         })
 
 
-func _get_group_name(group) -> String:
+func _get_group_name(entry: Dictionary) -> String:
+    var group = entry.get("group_ref", null)
     if _goto_manager and _goto_manager.has_method("get_group_name"):
         return _goto_manager.get_group_name(group)
     elif group.has_method("get_window_name"):
@@ -111,7 +131,33 @@ func _get_group_name(group) -> String:
     return "Group"
 
 
-func _get_group_icon(group) -> String:
+func _get_group_icon(entry: Dictionary) -> String:
+    var group = entry.get("group_ref", null)
     if _goto_manager and _goto_manager.has_method("get_group_icon_path"):
         return _goto_manager.get_group_icon_path(group)
     return "res://textures/icons/window.png"
+
+
+func _normalize_groups(groups: Array) -> Array[Dictionary]:
+    var out: Array[Dictionary] = []
+    for raw: Variant in groups:
+        if raw is Dictionary:
+            var entry: Dictionary = raw
+            var group_ref = entry.get("group_ref", null)
+            if not is_instance_valid(group_ref):
+                continue
+            out.append({
+                "group_ref": group_ref,
+                "item_id": str(entry.get("item_id", "group:%s" % str(group_ref.name))),
+                "title": str(entry.get("title", "")).strip_edges(),
+                "icon_path": str(entry.get("icon_path", "")).strip_edges()
+            })
+            continue
+        if is_instance_valid(raw):
+            out.append({
+                "group_ref": raw,
+                "item_id": "group:%s" % str(raw.name),
+                "title": "",
+                "icon_path": ""
+            })
+    return out

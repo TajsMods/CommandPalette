@@ -1,4 +1,4 @@
-class_name TajsModFuzzySearch
+class_name TajsCommandPaletteFuzzySearch
 extends RefCounted
 
 ## Search result structure

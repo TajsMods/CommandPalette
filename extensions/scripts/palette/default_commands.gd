@@ -1,8 +1,7 @@
-class_name TajsModDefaultCommands
+class_name TajsCommandPaletteDefaultCommands
 extends RefCounted
 
 const LOG_NAME = "TajsCommandPalette:DefaultCommands"
-const CoreLog = preload("res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/common/core_log.gd")
 const CoreServices = preload("res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/common/core_services.gd")
 
 
@@ -221,7 +220,7 @@ static func register_all(registry, refs: Dictionary) -> void:
                     _upgrade_nodes(all_windows)
     })
 
-    CoreLog.log_info(LOG_NAME, "Registered %d default commands" % registry.get_count())
+    _log_info("Registered %d default commands" % registry.get_count())
     _log_category_diagnostics(category_infos)
 
 
@@ -392,6 +391,7 @@ static func _collect_resource_containers(node: Node, containers: Array[ResourceC
         _collect_resource_containers(child, containers)
 
 static func _get_runtime_categories() -> Array[Dictionary]:
+    var legacy_order: Array[String] = ["network", "cpu", "gpu", "research", "factory", "hacking", "coding", "utility", "ai", "power"]
     var icon_by_category := {
         "network": "connections",
         "cpu": "bits",
@@ -417,7 +417,7 @@ static func _get_runtime_categories() -> Array[Dictionary]:
         "utility": "Utility"
     }
     var seen: Dictionary = {}
-    var categories: Array[Dictionary] = []
+    var discovered_ids: Array[String] = []
     if Data != null and Data.windows != null:
         for window_id: Variant in Data.windows:
             var window_data: Dictionary = Data.windows.get(window_id, {})
@@ -425,14 +425,24 @@ static func _get_runtime_categories() -> Array[Dictionary]:
             if category_id.is_empty() or seen.has(category_id):
                 continue
             seen[category_id] = true
-            categories.append({
-                "id": category_id,
-                "title": title_by_category.get(category_id, category_id.capitalize()),
-                "icon": icon_by_category.get(category_id, "cog")
-            })
-    categories.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-        return str(a.get("title", "")) < str(b.get("title", ""))
-    )
+            discovered_ids.append(category_id)
+    var ordered_ids: Array[String] = []
+    for category_id: String in legacy_order:
+        if seen.has(category_id):
+            ordered_ids.append(category_id)
+    var unknown_ids: Array[String] = []
+    for category_id: String in discovered_ids:
+        if not legacy_order.has(category_id):
+            unknown_ids.append(category_id)
+    unknown_ids.sort()
+    ordered_ids.append_array(unknown_ids)
+    var categories: Array[Dictionary] = []
+    for category_id: String in ordered_ids:
+        categories.append({
+            "id": category_id,
+            "title": title_by_category.get(category_id, _humanize_category_id(category_id)),
+            "icon": icon_by_category.get(category_id, "cog")
+        })
     return categories
 
 static func _log_category_diagnostics(category_infos: Array[Dictionary]) -> void:
@@ -447,13 +457,13 @@ static func _log_category_diagnostics(category_infos: Array[Dictionary]) -> void
         category_ids.has("research") and category_ids.has("factory") and category_ids.has("hacking") and
         category_ids.has("coding") and category_ids.has("utility")
     )
-    CoreLog.log_info(LOG_NAME, "Compatibility diagnostics: discovered_categories=%s generated_category_commands=%d ai_generated=%s power_generated=%s" % [
+    _log_info("Compatibility diagnostics: discovered_categories=%s generated_category_commands=%d ai_generated=%s power_generated=%s" % [
         category_ids,
         generated_category_commands,
         category_ids.has("ai"),
         category_ids.has("power")
     ])
-    CoreLog.log_info(LOG_NAME, "Compatibility diagnostics: legacy_categories_present=%s" % legacy_ok)
+    _log_info("Compatibility diagnostics: legacy_categories_present=%s" % legacy_ok)
 
 static func _is_debug_enabled() -> bool:
     if not Engine.has_meta("TajsCore"):
@@ -467,3 +477,36 @@ static func _is_debug_enabled() -> bool:
     if not core_settings.has_method("get_bool"):
         return false
     return core_settings.get_bool("core.debug", core_settings.get_bool("core.debug_log", false))
+
+static func _log_info(message: String) -> void:
+    if Engine.has_meta("TajsCore"):
+        var core = Engine.get_meta("TajsCore")
+        if core != null and core.has_method("logi"):
+            core.logi("TajemnikTV-CommandPalette", message)
+            return
+    if _has_global_class("ModLoaderLog"):
+        ModLoaderLog.info(message, LOG_NAME)
+    else:
+        print("%s %s" % [LOG_NAME, message])
+
+static func _has_global_class(class_name_str: String) -> bool:
+    for entry in ProjectSettings.get_global_class_list():
+        if entry.get("class", "") == class_name_str:
+            return true
+    return false
+
+static func _humanize_category_id(category_id: String) -> String:
+    var lower: String = category_id.to_lower()
+    if lower == "ai":
+        return "AI"
+    if lower == "cpu":
+        return "CPU"
+    if lower == "gpu":
+        return "GPU"
+    var parts: PackedStringArray = category_id.split("_", false)
+    var title_parts: Array[String] = []
+    for part: String in parts:
+        if part.is_empty():
+            continue
+        title_parts.append(part.capitalize())
+    return " ".join(title_parts)

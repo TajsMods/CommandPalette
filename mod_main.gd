@@ -1,14 +1,16 @@
 extends Node
 
 const MOD_ID := "TajemnikTV-CommandPalette"
-const LOG_NAME := "Main"
+const LOG_NAME := "TajemnikTV-CommandPalette:Main"
 const CORE_META_KEY := "TajsCore"
 const CORE_MIN_VERSION := "1.0.0"
 const KEYBIND_CATEGORY_ID := "tajs_command_palette"
+const SETTINGS_PREFIX := "tajs_command_palette"
+const SETTING_MAX_RECENTS := SETTINGS_PREFIX + ".max_recents"
+const LEGACY_SETTING_MAX_RECENTS := MOD_ID + ".max_recents"
 
 const PaletteControllerScript = preload("res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/palette_controller.gd")
 const PaletteSettingsScript = preload("res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/palette_settings.gd")
-const CoreLog = preload("res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/common/core_log.gd")
 
 var _core
 var _config
@@ -50,16 +52,17 @@ func _register_module() -> void:
         _core.register_module({
             "id": MOD_ID,
             "name": "Command Palette",
-            "version": "1.0.0",
+            "version": _get_mod_version(),
             "min_core_version": CORE_MIN_VERSION
         })
 
 
 func _register_settings() -> void:
-    if _core.settings == null:
+    var settings = _get_settings_service()
+    if settings == null:
         return
     var schema := {
-        MOD_ID + ".max_recents": {
+        SETTING_MAX_RECENTS: {
             "type": "int",
             "default": 10,
             "label": "Max Recent Commands",
@@ -68,13 +71,25 @@ func _register_settings() -> void:
     }
     if _core.has_method("register_settings_schema"):
         _core.register_settings_schema(MOD_ID, schema)
-    else:
-        _core.settings.register_schema(MOD_ID, schema)
+    _migrate_legacy_setting_keys()
+
+func _migrate_legacy_setting_keys() -> void:
+    var settings = _get_settings_service()
+    if _core == null or settings == null:
+        return
+    var migration_ns := "tajs_command_palette_naming"
+    if settings.get_migration_version(migration_ns) != "0.0.0":
+        return
+    if settings.get_value(SETTING_MAX_RECENTS, null) == null:
+        var legacy = settings.get_value(LEGACY_SETTING_MAX_RECENTS, null)
+        if legacy != null:
+            settings.set_value(SETTING_MAX_RECENTS, legacy)
+    settings.set_migration_version(migration_ns, "1.0.0")
 
 
 func _setup_settings() -> void:
     _config = PaletteSettingsScript.new()
-    _config.setup(_core.settings, _core)
+    _config.setup(_get_settings_service(), _core)
     if _config == null:
         _log_warn("Command palette settings unavailable.")
 
@@ -86,8 +101,9 @@ func _init_controller() -> void:
 
 
 func _register_events() -> void:
-    if _core.event_bus != null:
-        _core.event_bus.on("game.hud_ready", Callable(self , "_on_hud_ready"), self , true)
+    var event_bus = _get_event_bus()
+    if event_bus != null:
+        event_bus.on("game.hud_ready", Callable(self , "_on_hud_ready"), self , true)
     call_deferred("_check_existing_hud")
 
 
@@ -110,14 +126,36 @@ func _on_hud_ready(_payload: Dictionary) -> void:
     if _config == null:
         _log_warn("Command palette settings unavailable; palette UI disabled.")
         return
-    var registry = _core.commands if _core.commands != null else _core.command_registry
+    var registry = _get_command_registry()
     if registry == null:
         _log_warn("Command registry not available; palette UI disabled.")
         return
     palette_controller.initialize(get_tree(), _config, null, self , registry)
     _palette_initialized = true
-    if _core.event_bus != null:
-        _core.event_bus.emit("command_palette.ready", {"controller": palette_controller, "overlay": palette_controller.overlay}, true)
+    var event_bus = _get_event_bus()
+    if event_bus != null:
+        event_bus.emit("command_palette.ready", {"controller": palette_controller, "overlay": palette_controller.overlay}, true)
+
+func _get_settings_service() -> Variant:
+    if _core == null:
+        return null
+    if _core.has_method("get_settings_service"):
+        return _core.get_settings_service()
+    return _core.settings
+
+func _get_event_bus() -> Variant:
+    if _core == null:
+        return null
+    if _core.has_method("get_event_bus"):
+        return _core.get_event_bus()
+    return _core.event_bus
+
+func _get_command_registry() -> Variant:
+    if _core == null:
+        return null
+    if _core.has_method("get_command_registry"):
+        return _core.get_command_registry()
+    return _core.commands
 
 
 func _register_keybinds() -> void:
@@ -201,12 +239,34 @@ func _on_palette_favorite() -> void:
 func _log_info(message: String) -> void:
     if _core != null and _core.has_method("logi"):
         _core.logi(MOD_ID, message)
+    elif _has_global_class("ModLoaderLog"):
+        ModLoaderLog.info(message, MOD_ID)
     else:
-        CoreLog.log_info(LOG_NAME, message)
+        print("%s %s" % [MOD_ID, message])
 
 
 func _log_warn(message: String) -> void:
     if _core != null and _core.has_method("logw"):
         _core.logw(MOD_ID, message)
+    elif _has_global_class("ModLoaderLog"):
+        ModLoaderLog.warning(message, MOD_ID)
     else:
-        CoreLog.log_warn(LOG_NAME, message)
+        print("%s %s" % [MOD_ID, message])
+
+func _get_mod_version() -> String:
+    var manifest_path = get_script().resource_path.get_base_dir().path_join("manifest.json")
+    if FileAccess.file_exists(manifest_path):
+        var file := FileAccess.open(manifest_path, FileAccess.READ)
+        if file:
+            var json := JSON.new()
+            if json.parse(file.get_as_text()) == OK:
+                var data = json.get_data()
+                if data is Dictionary and data.has("version_number"):
+                    return str(data["version_number"])
+    return "0.1.0"
+
+static func _has_global_class(class_name_str: String) -> bool:
+    for entry in ProjectSettings.get_global_class_list():
+        if entry.get("class", "") == class_name_str:
+            return true
+    return false

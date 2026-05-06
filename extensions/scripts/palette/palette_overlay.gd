@@ -1,4 +1,4 @@
-class_name TajsModPaletteOverlay
+class_name TajsCommandPalettePaletteOverlay
 extends CanvasLayer
 
 const LOG_NAME = "Palette"
@@ -16,12 +16,13 @@ const HelpMode = preload("res://mods-unpacked/TajemnikTV-CommandPalette/extensio
 const PickerMode = preload("res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/modes/picker_mode.gd")
 const GroupPickerMode = preload("res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/modes/group_picker_mode.gd")
 const NotePickerMode = preload("res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/modes/note_picker_mode.gd")
+const JumpPickerMode = preload("res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/modes/jump_picker_mode.gd")
 
 # References
 var registry # TajsCoreCommandRegistry
-var context # TajsModContextProvider
+var context # TajsCommandPaletteContextProvider
 var palette_config # TajsCommandPaletteSettings
-var node_metadata_service # TajsModNodeMetadataService
+var node_metadata_service # TajsCommandPaletteNodeMetadataService
 
 # UI Elements
 var background: ColorRect
@@ -69,6 +70,8 @@ var _group_picker_groups: Array = [] # Array of group node references
 # Note Picker Mode (for Jump to Note feature)
 var _note_picker_mode: bool = false
 var _note_picker_notes: Array = [] # Array of sticky note references
+var _jump_picker_mode: bool = false
+var _jump_picker_items: Array = []
 
 # Calculator Mode (for inline math evaluation)
 var _calc_mode: bool = false
@@ -101,6 +104,7 @@ var _help_mode_handler
 var _picker_mode_handler
 var _group_picker_mode_handler
 var _note_picker_mode_handler
+var _jump_picker_mode_handler
 
 # Styling
 const PANEL_WIDTH = 600
@@ -121,15 +125,16 @@ const CoreServices = preload("res://mods-unpacked/TajemnikTV-CommandPalette/exte
 
 signal command_executed(command_id: String)
 signal node_selected(window_id: String, spawn_pos: Vector2, origin_info: Dictionary)
-signal group_selected(group) # Emitted when a group is selected in group picker mode
-signal note_picker_selected(note) # Emitted when a note is selected in note picker mode
+signal group_selected(selection: Dictionary) # {group_ref, item_id, handled}
+signal note_picker_selected(selection: Dictionary) # {note_ref, item_id, handled}
+signal jump_picker_selected(selection: Dictionary) # {item_id, type, target_ref, title, handled}
 signal closed
 signal opened
 
 
 func _init() -> void:
     layer = 100 # Above most UI
-    name = "TajsModPalette"
+    name = "TajsCommandPalettePalette"
 
 
 func _ready() -> void:
@@ -177,6 +182,13 @@ func _setup_mode_handlers() -> void:
     _note_picker_mode_handler.breadcrumb_changed.connect(_on_mode_breadcrumb_changed)
     _note_picker_mode_handler.request_close.connect(hide_palette)
     _note_picker_mode_handler.note_selected.connect(_on_note_picker_selected)
+
+    _jump_picker_mode_handler = JumpPickerMode.new()
+    _jump_picker_mode_handler.overlay = self
+    _jump_picker_mode_handler.items_updated.connect(_on_mode_items_updated)
+    _jump_picker_mode_handler.breadcrumb_changed.connect(_on_mode_breadcrumb_changed)
+    _jump_picker_mode_handler.request_close.connect(hide_palette)
+    _jump_picker_mode_handler.jump_selected.connect(_on_jump_picker_selected)
 
 
 ## Handle mode items updated signal
@@ -239,13 +251,16 @@ func _on_picker_node_selected(node_id: String, spawn_pos: Vector2, origin_info: 
 
 
 ## Handle group picker selected
-func _on_group_picker_selected(group) -> void:
-    group_selected.emit(group)
+func _on_group_picker_selected(selection: Dictionary) -> void:
+    group_selected.emit(selection)
 
 
 ## Handle note picker selected
-func _on_note_picker_selected(note) -> void:
-    note_picker_selected.emit(note)
+func _on_note_picker_selected(selection: Dictionary) -> void:
+    note_picker_selected.emit(selection)
+
+func _on_jump_picker_selected(selection: Dictionary) -> void:
+    jump_picker_selected.emit(selection)
 
 
 ## Get the currently active mode handler, or null if none
@@ -260,6 +275,8 @@ func _get_active_mode_handler():
         return _group_picker_mode_handler
     if _note_picker_mode and _note_picker_mode_handler:
         return _note_picker_mode_handler
+    if _jump_picker_mode and _jump_picker_mode_handler:
+        return _jump_picker_mode_handler
     return null
 
 
@@ -281,7 +298,7 @@ func _input(event: InputEvent) -> void:
                 # Exit def mode back to search results
                 _exit_def_mode()
                 get_viewport().set_input_as_handled()
-            elif _help_mode or _calc_mode or _picker_mode or _group_picker_mode or _note_picker_mode or not _current_path.is_empty():
+            elif _help_mode or _calc_mode or _picker_mode or _group_picker_mode or _note_picker_mode or _jump_picker_mode or not _current_path.is_empty():
                 # Exit any special mode or navigate back in category hierarchy
                 _go_back()
                 get_viewport().set_input_as_handled()
@@ -1122,6 +1139,8 @@ func hide_palette() -> void:
     # Reset note picker mode state
     _note_picker_mode = false
     _note_picker_notes.clear()
+    _jump_picker_mode = false
+    _jump_picker_items.clear()
 
     # Reset calculator mode state
     _calc_mode = false
@@ -1340,12 +1359,23 @@ func _display_group_picker(groups: Array) -> void:
     var goto_manager = get_meta("goto_group_manager", null)
 
     # Convert group data to display format
-    for group in groups:
+    for raw_group in groups:
+        var group = raw_group
+        var pre_title := ""
+        var pre_icon := ""
+        var pre_item_id := ""
+        if raw_group is Dictionary:
+            group = raw_group.get("group_ref", null)
+            pre_title = str(raw_group.get("title", ""))
+            pre_icon = str(raw_group.get("icon_path", ""))
+            pre_item_id = str(raw_group.get("item_id", ""))
         if not is_instance_valid(group):
             continue
 
         var group_name := "Group"
-        if goto_manager and goto_manager.has_method("get_group_name"):
+        if pre_title != "":
+            group_name = pre_title
+        elif goto_manager and goto_manager.has_method("get_group_name"):
             group_name = goto_manager.get_group_name(group)
         elif group.has_method("get_window_name"):
             group_name = group.get_window_name()
@@ -1353,7 +1383,9 @@ func _display_group_picker(groups: Array) -> void:
             group_name = group.custom_name
 
         var icon_path := "res://textures/icons/window.png"
-        if goto_manager and goto_manager.has_method("get_group_icon_path"):
+        if pre_icon != "":
+            icon_path = pre_icon
+        elif goto_manager and goto_manager.has_method("get_group_icon_path"):
             icon_path = goto_manager.get_group_icon_path(group)
 
         var item := {
@@ -1364,7 +1396,8 @@ func _display_group_picker(groups: Array) -> void:
             "icon_path": icon_path,
             "is_category": false,
             "badge": "SAFE",
-            "_group_ref": group
+            "_group_ref": group,
+            "_board_item_id": pre_item_id if pre_item_id != "" else "group:%s" % str(group.name)
         }
         _displayed_items.append(item)
 
@@ -1396,12 +1429,19 @@ func _filter_group_picker(query: String) -> void:
     var query_lower := query.to_lower()
     var goto_manager = get_meta("goto_group_manager", null)
 
-    for group in _group_picker_groups:
+    for raw_group in _group_picker_groups:
+        var group = raw_group
+        var pre_title := ""
+        if raw_group is Dictionary:
+            group = raw_group.get("group_ref", null)
+            pre_title = str(raw_group.get("title", ""))
         if not is_instance_valid(group):
             continue
 
         var group_name := ""
-        if goto_manager and goto_manager.has_method("get_group_name"):
+        if pre_title != "":
+            group_name = pre_title
+        elif goto_manager and goto_manager.has_method("get_group_name"):
             group_name = goto_manager.get_group_name(group)
         elif group.has_method("get_window_name"):
             group_name = group.get_window_name()
@@ -1429,6 +1469,8 @@ func show_note_picker(notes: Array, sticky_manager) -> void:
 
     _note_picker_mode = true
     _note_picker_notes = notes.duplicate()
+    _jump_picker_mode = false
+    _jump_picker_items.clear()
     _clear_autocomplete()
 
     # Setup note picker mode handler
@@ -1466,6 +1508,44 @@ func show_note_picker(notes: Array, sticky_manager) -> void:
 
     CoreServices.play_sound("menu_open")
 
+## Show unified jump picker (Find Anything / Go To).
+func show_jump_picker(items: Array, title: String = "Find Anything") -> void:
+    _picker_mode = false
+    _picker_origin_info.clear()
+    _picker_nodes.clear()
+    _group_picker_mode = false
+    _group_picker_groups.clear()
+    _note_picker_mode = false
+    _note_picker_notes.clear()
+
+    _jump_picker_mode = true
+    _jump_picker_items = items.duplicate(true)
+    _clear_autocomplete()
+
+    if _jump_picker_mode_handler:
+        _jump_picker_mode_handler.setup(items, title)
+        _jump_picker_mode_handler.enter()
+
+    if not _is_open:
+        _is_open = true
+        visible = true
+    if panel:
+        panel.visible = true
+
+    search_input.text = ""
+    search_input.placeholder_text = "Search anything to jump to..."
+    _selected_index = 0
+    _current_path = []
+    _history_back.clear()
+    _history_forward.clear()
+
+    if _jump_picker_mode_handler:
+        _jump_picker_mode_handler.filter("")
+        breadcrumb_label.text = _jump_picker_mode_handler.get_breadcrumb()
+
+    search_input.grab_focus()
+    CoreServices.play_sound("menu_open")
+
 ## Display notes in the note picker mode
 func _display_note_picker(notes: Array) -> void:
     # Clear existing items
@@ -1477,12 +1557,23 @@ func _display_note_picker(notes: Array) -> void:
     _selected_index = 0
 
     # Convert note data to display format
-    for note in notes:
+    for raw_note in notes:
+        var note = raw_note
+        var pre_title := ""
+        var pre_body := ""
+        var pre_item_id := ""
+        var pre_icon := "res://textures/icons/star.png"
+        if raw_note is Dictionary:
+            note = raw_note.get("note_ref", null)
+            pre_title = str(raw_note.get("title", ""))
+            pre_body = str(raw_note.get("body_text", ""))
+            pre_item_id = str(raw_note.get("item_id", ""))
+            pre_icon = str(raw_note.get("icon_path", pre_icon))
         if not is_instance_valid(note):
             continue
 
-        var title = note.title_text if "title_text" in note else "Note"
-        var body = note.body_text if "body_text" in note else ""
+        var title = pre_title if pre_title != "" else (note.title_text if "title_text" in note else "Note")
+        var body = pre_body if pre_body != "" else (note.body_text if "body_text" in note else "")
 
         # Truncate body for hint
         var hint = body.replace("\n", " ").substr(0, 50)
@@ -1493,10 +1584,11 @@ func _display_note_picker(notes: Array) -> void:
             "title": title,
             "hint": hint,
             "category_path": [],
-            "icon_path": "res://textures/icons/star.png",
+            "icon_path": pre_icon,
             "is_category": false,
             "badge": "SAFE",
-            "_note_ref": note
+            "_note_ref": note,
+            "_board_item_id": pre_item_id if pre_item_id != "" else "note:%s" % str(note.note_id if "note_id" in note else note.name)
         }
         _displayed_items.append(item)
 
@@ -1527,12 +1619,19 @@ func _filter_note_picker(query: String) -> void:
     var filtered: Array = []
     var query_lower := query.to_lower()
 
-    for note in _note_picker_notes:
+    for raw_note in _note_picker_notes:
+        var note = raw_note
+        var pre_title := ""
+        var pre_body := ""
+        if raw_note is Dictionary:
+            note = raw_note.get("note_ref", null)
+            pre_title = str(raw_note.get("title", ""))
+            pre_body = str(raw_note.get("body_text", ""))
         if not is_instance_valid(note):
             continue
 
-        var title: String = note.title_text if "title_text" in note else ""
-        var body: String = note.body_text if "body_text" in note else ""
+        var title: String = pre_title if pre_title != "" else (note.title_text if "title_text" in note else "")
+        var body: String = pre_body if pre_body != "" else (note.body_text if "body_text" in note else "")
 
         if query_lower in title.to_lower() or query_lower in body.to_lower():
             filtered.append(note)
@@ -2299,7 +2398,7 @@ func _update_autocomplete(raw_query: String) -> void:
         _clear_autocomplete()
         return
 
-    if _help_mode or _def_mode or _calc_mode or _picker_mode or _group_picker_mode or _note_picker_mode:
+    if _help_mode or _def_mode or _calc_mode or _picker_mode or _group_picker_mode or _note_picker_mode or _jump_picker_mode:
         _clear_autocomplete()
         return
 
@@ -2510,6 +2609,10 @@ func _perform_search() -> void:
     if _note_picker_mode and _note_picker_mode_handler:
         _note_picker_mode_handler.filter(query)
         breadcrumb_label.text = _note_picker_mode_handler.get_breadcrumb()
+        return
+    if _jump_picker_mode and _jump_picker_mode_handler:
+        _jump_picker_mode_handler.filter(query)
+        breadcrumb_label.text = _jump_picker_mode_handler.get_breadcrumb()
         return
 
     # Help command mode - delegate to mode handler
@@ -2725,6 +2828,13 @@ func _execute_selected() -> void:
     elif _note_picker_mode:
         _execute_note_picker_selection(item)
         return
+    if _jump_picker_mode and _jump_picker_mode_handler:
+        if _jump_picker_mode_handler.execute_selection(item):
+            return
+    # Safety net: if a jump item leaks while mode flags are stale, never execute it as a command id.
+    if item.has("_item_id"):
+        _execute_jump_picker_selection(item)
+        return
 
     # Handle calculator mode - delegate to mode handler
     if _calc_mode and _calculator_mode_handler:
@@ -2798,8 +2908,18 @@ func _execute_group_selection(item: Dictionary) -> void:
         hide_palette()
         return
 
-    # Emit signal for controller/caller to handle navigation
-    group_selected.emit(group)
+    var item_id := str(item.get("_board_item_id", "group:%s" % str(group.name)))
+    var handled := false
+    var core = CoreServices._get_core()
+    if core != null and core.has_method("board_focus_item"):
+        handled = bool(core.board_focus_item(item_id, {"fit": true, "padding": 0.15}))
+
+    # Emit signal for controller/caller to handle fallback behavior
+    group_selected.emit({
+        "group_ref": group,
+        "item_id": item_id,
+        "handled": handled
+    })
 
     CoreServices.play_sound("click")
     hide_palette()
@@ -2814,9 +2934,36 @@ func _execute_note_picker_selection(item: Dictionary) -> void:
         hide_palette()
         return
 
-    # Emit signal for controller/caller to handle navigation
-    note_picker_selected.emit(note)
+    var item_id := str(item.get("_board_item_id", "note:%s" % str(note.note_id if "note_id" in note else note.name)))
+    var handled := false
+    var core = CoreServices._get_core()
+    if core != null and core.has_method("board_focus_item"):
+        handled = bool(core.board_focus_item(item_id, {"fit": false}))
 
+    # Emit signal for controller/caller to handle fallback behavior
+    note_picker_selected.emit({
+        "note_ref": note,
+        "item_id": item_id,
+        "handled": handled
+    })
+
+    CoreServices.play_sound("click")
+    hide_palette()
+
+func _execute_jump_picker_selection(item: Dictionary) -> void:
+    var item_id := str(item.get("_item_id", ""))
+    if item_id == "":
+        return
+    var item_type := str(item.get("_item_type", ""))
+    var target_ref = item.get("_target_ref", null)
+
+    jump_picker_selected.emit({
+        "item_id": item_id,
+        "type": item_type,
+        "target_ref": target_ref,
+        "title": str(item.get("title", "")),
+        "handled": false
+    })
     CoreServices.play_sound("click")
     hide_palette()
 
@@ -3050,7 +3197,7 @@ func _go_back() -> void:
         return
 
     # Handle special modes - exit back to normal mode
-    if _calc_mode or _picker_mode or _group_picker_mode or _note_picker_mode:
+    if _calc_mode or _picker_mode or _group_picker_mode or _note_picker_mode or _jump_picker_mode:
         _calc_mode = false
         _picker_mode = false
         _picker_origin_info.clear()
@@ -3059,6 +3206,8 @@ func _go_back() -> void:
         _group_picker_groups.clear()
         _note_picker_mode = false
         _note_picker_notes.clear()
+        _jump_picker_mode = false
+        _jump_picker_items.clear()
         _current_path = []
         search_input.text = ""
         search_input.placeholder_text = "Search commands..."

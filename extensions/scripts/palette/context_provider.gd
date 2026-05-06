@@ -1,4 +1,4 @@
-class_name TajsModContextProvider
+class_name TajsCommandPaletteContextProvider
 extends RefCounted
 
 const LOG_NAME = "TajsCommandPalette:Context"

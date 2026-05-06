@@ -1,4 +1,4 @@
-class_name TajsModResourceDefinitionPanel
+class_name TajsCommandPaletteResourceDefinitionPanel
 extends PanelContainer
 
 signal back_requested

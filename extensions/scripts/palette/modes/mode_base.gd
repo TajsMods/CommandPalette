@@ -1,4 +1,4 @@
-class_name TajsModPaletteModeBase
+class_name TajsCommandPalettePaletteModeBase
 extends RefCounted
 
 ## Emitted when the mode wants to display items

@@ -1,8 +1,7 @@
-class_name TajsModNodeMetadataService
+class_name TajsCommandPaletteNodeMetadataService
 extends RefCounted
 
 const LOG_NAME = "TajsCommandPalette:NodeMetadataService"
-const CoreLog = preload("res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/common/core_log.gd")
 const FuzzySearch = preload("res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/fuzzy_search.gd")
 
 # Cache for node metadata
@@ -11,9 +10,14 @@ var _node_details_cache: Dictionary = {}
 var _cache_built: bool = false
 var _fuzzy_search: RefCounted
 var _zero_port_nodes: Array[String] = []
+var _scene_resolver: Variant
 
 func _init() -> void:
     _fuzzy_search = FuzzySearch.new()
+    if Engine.has_meta("TajsCore"):
+        var core: Variant = Engine.get_meta("TajsCore")
+        if core != null:
+            _scene_resolver = core.get("scene_path_resolver")
 
 ## Get all nodes available in the game
 ## Returns an array of node summaries {id, name, category, icon, score}
@@ -86,7 +90,7 @@ func _build_cache() -> void:
     _zero_port_nodes.clear()
     
     if not Data or not "windows" in Data:
-        CoreLog.log_error(LOG_NAME, "Data.windows not found")
+        _log_error("Data.windows not found")
         return
     
     for id in Data.windows:
@@ -108,7 +112,7 @@ func _build_cache() -> void:
         _node_cache.append(node_summary)
     
     _cache_built = true
-    CoreLog.log_info(LOG_NAME, "Built node metadata cache for %d nodes" % _node_cache.size())
+    _log_info("Built node metadata cache for %d nodes" % _node_cache.size())
     _log_debug("Node metadata diagnostics: zero_port_nodes=%d sample=%s" % [
         _zero_port_nodes.size(),
         _zero_port_nodes.slice(0, min(10, _zero_port_nodes.size()))
@@ -126,6 +130,7 @@ func _extract_node_details(node_id: String, data: Dictionary) -> Dictionary:
         "description": data.get("description", ""),
         "inputs": [],
         "outputs": [],
+        "modifiers_added": [],
         "scene_path": ""
     }
     
@@ -159,11 +164,14 @@ func _extract_node_details(node_id: String, data: Dictionary) -> Dictionary:
     
     # Add unlock info if available (heuristic-based for now)
     details.unlock_info = _get_unlock_info(node_id, data)
+    details.modifiers_added = _extract_modifiers(node_id, data)
     
     return details
 
 func _resolve_window_scene_path(data: Dictionary) -> Dictionary:
     var scene_value: String = str(data.get("scene", ""))
+    if _scene_resolver != null and _scene_resolver.has_method("resolve_window_scene"):
+        return _scene_resolver.resolve_window_scene(scene_value)
     if scene_value.is_empty():
         return {"original": scene_value, "resolved": "", "attempted": []}
     var attempted: Array[String] = []
@@ -178,14 +186,6 @@ func _resolve_window_scene_path(data: Dictionary) -> Dictionary:
 
 ## Helper to recursively collect port info
 func _collect_ports(node: Node, details: Dictionary) -> void:
-    # DEBUG LOGGING (Unconditional)
-    if _is_debug_enabled() and "Neuron" in node.name:
-        _log_debug("Visiting node '%s'" % node.name)
-        _log_debug("  - Script: %s" % str(node.get_script()))
-        _log_debug("  - Has default_resource? %s" % str(node.get("default_resource") != null))
-        if node.get("default_resource") != null:
-             _log_debug("  - Value: %s" % str(node.get("default_resource")))
-
     # Use duck typing/property check instead of class_name to avoid potential scope issues
     # We check for a property unique enough to ResourceContainer
     if node.get("default_resource") != null:
@@ -196,15 +196,6 @@ func _collect_ports(node: Node, details: Dictionary) -> void:
         if color == null or color == "": color = "white"
         
         var default_res = node.get("default_resource")
-        
-        # DEBUG LOGGING
-        if _is_debug_enabled() and "Neuron" in node.name:
-            _log_debug("Found node %s" % node.name)
-            _log_debug("  - default_resource: %s" % str(default_res))
-            _log_debug("  - override_connector: %s" % str(shape))
-            _log_debug("  - script: %s" % str(node.get_script()))
-        
-
         if shape.is_empty() and default_res != "" and Data.resources.has(default_res):
             var res_data = Data.resources[default_res]
             shape = res_data.get("connection", "")
@@ -216,8 +207,6 @@ func _collect_ports(node: Node, details: Dictionary) -> void:
         var rc_default_resource = default_res
         
         if not shape.is_empty():
-            if _is_debug_enabled() and "Neuron" in node.name:
-                 _log_debug("Adding port info with ID: %s" % str(rc_default_resource))
             var port_info = {
                 "shape": shape,
                 "color": color,
@@ -226,9 +215,11 @@ func _collect_ports(node: Node, details: Dictionary) -> void:
                 "resource_id": rc_default_resource
             }
             
-            if node.has_node("InputConnector"):
+            var is_input: bool = node.has_node("InputConnector") or node.is_in_group("input")
+            var is_output: bool = node.has_node("OutputConnector") or node.is_in_group("output")
+            if is_input:
                 _add_port_to_list(details.inputs, port_info)
-            if node.has_node("OutputConnector"):
+            if is_output:
                 _add_port_to_list(details.outputs, port_info)
     
     for child in node.get_children():
@@ -261,6 +252,133 @@ func _get_unlock_info(_node_id: String, data: Dictionary) -> Dictionary:
             
     return info
 
+# Hardcoded mapping of nodes to modifiers applied programmatically.
+const NODE_MODIFIERS := {
+    "virus_scanner": ["scanned", "infected"],
+    "antivirus_pro": ["scanned"],
+    "quarantine": ["scanned"],
+    "verifier": ["validated", "corrupted"],
+    "compressor": ["compressed"],
+    "lossless_compressor": ["compressed", "enhanced"],
+    "enhancer": ["enhanced"],
+    "refiner": ["refined"],
+    "analyzer": ["analyzed"],
+    "distillator": ["distilled"],
+    "decryptor": ["decrypted"],
+    "virus_extractor": ["infected"],
+    "trojan_injector": ["trojan"],
+    "data_lab": ["analyzed"],
+    "torrent_browser_scanned": ["scanned"],
+    "torrent_browser_verified": ["validated"],
+    "torrent_browser_analyzed": ["analyzed"],
+    "torrent_browser_encrypted": ["encrypted"],
+    "encryptor": ["encrypted"],
+    "generator_text": ["ai"],
+    "generator_image": ["ai"],
+    "generator_sound": ["ai"],
+    "generator_video": ["ai"],
+    "generator_program": ["ai"],
+    "generator_game": ["ai"]
+}
+
+const FILE_MODIFIERS := {
+    "scanned": {"name": "Scanned", "icon": "antivirus", "description_key": "guide_file_modifiers_scanned"},
+    "validated": {"name": "Validated", "icon": "puzzle", "description_key": "guide_file_modifiers_validated"},
+    "compressed": {"name": "Compressed", "icon": "minimize", "description_key": "guide_file_modifiers_compressed"},
+    "enhanced": {"name": "Enhanced", "icon": "up_arrow", "description_key": "guide_file_modifiers_enhanced"},
+    "infected": {"name": "Infected", "icon": "virus", "description_key": "guide_file_modifiers_infected"},
+    "refined": {"name": "Refined", "icon": "filter", "description_key": "guide_file_modifiers_refined"},
+    "distilled": {"name": "Distilled", "icon": "connections", "description_key": "guide_file_modifiers_distilled"},
+    "analyzed": {"name": "Analyzed", "icon": "magnifying_glass", "description_key": "guide_file_modifiers_analyzed"},
+    "hacked": {"name": "Hacked", "icon": "hacker", "description_key": "guide_file_modifiers_hacked"},
+    "corrupted": {"name": "Corrupted", "icon": "warning", "description_key": "guide_file_modifiers_corrupted"},
+    "ai": {"name": "AI", "icon": "brain", "description_key": "guide_file_modifiers_ai"},
+    "encrypted": {"name": "Encrypted", "icon": "padlock", "description_key": "guide_file_modifiers_encrypted"},
+    "decrypted": {"name": "Decrypted", "icon": "padlock_open", "description_key": "guide_file_modifiers_decrypted"},
+    "trojan": {"name": "Trojan", "icon": "trojan", "description_key": "guide_file_modifiers_trojan"}
+}
+
+func _extract_modifiers(node_id: String, data: Dictionary) -> Array:
+    var modifier_ids: Array = []
+    var seen: Dictionary = {}
+    var known_keys: Array[String] = [
+        "modifier", "modifiers", "adds_modifier", "adds_modifiers",
+        "add_modifier", "add_modifiers", "file_modifier", "file_modifiers",
+        "output_modifier", "output_modifiers", "input_modifier", "input_modifiers",
+        "modifiers_add", "modifier_add"
+    ]
+    for key: String in known_keys:
+        if data.has(key):
+            _append_modifier_value(modifier_ids, seen, data[key])
+    for key: Variant in data.keys():
+        var key_name: String = str(key).to_lower()
+        if key_name.find("modifier") == -1:
+            continue
+        _append_modifier_value(modifier_ids, seen, data[key])
+    if modifier_ids.is_empty() and NODE_MODIFIERS.has(node_id):
+        for mod: String in NODE_MODIFIERS[node_id]:
+            if not seen.has(mod):
+                seen[mod] = true
+                modifier_ids.append(mod)
+    var result: Array = []
+    for modifier_id: Variant in modifier_ids:
+        result.append(_resolve_modifier_meta(str(modifier_id)))
+    return result
+
+func _append_modifier_value(list: Array, seen: Dictionary, value: Variant) -> void:
+    if value == null:
+        return
+    if value is String:
+        var id: String = str(value)
+        if not id.is_empty() and not seen.has(id):
+            seen[id] = true
+            list.append(id)
+    elif value is Array:
+        for entry: Variant in value:
+            _append_modifier_value(list, seen, entry)
+    elif value is Dictionary:
+        if value.has("id"):
+            _append_modifier_value(list, seen, value["id"])
+        elif value.has("modifier"):
+            _append_modifier_value(list, seen, value["modifier"])
+
+func _resolve_modifier_meta(modifier_id: String) -> Dictionary:
+    var meta: Dictionary = {
+        "id": modifier_id,
+        "name": modifier_id.capitalize(),
+        "description": ""
+    }
+    var id_lower: String = modifier_id.to_lower()
+    if FILE_MODIFIERS.has(id_lower):
+        var fm: Dictionary = FILE_MODIFIERS[id_lower]
+        meta.name = fm.get("name", modifier_id.capitalize())
+        meta.icon = fm.get("icon", "")
+        var desc_key: String = str(fm.get("description_key", ""))
+        if not desc_key.is_empty():
+            var translated_desc: String = tr(desc_key)
+            if translated_desc != desc_key:
+                meta.description = translated_desc
+            return meta
+    if Data.resources.has(modifier_id):
+        var res: Dictionary = Data.resources[modifier_id]
+        meta.name = tr(res.get("name", modifier_id))
+        meta.description = tr(res.get("description", ""))
+        if res.has("icon"):
+            meta.icon = res.get("icon", "")
+        return meta
+    if "items" in Data and Data.items.has(modifier_id):
+        var item: Dictionary = Data.items[modifier_id]
+        meta.name = tr(item.get("name", modifier_id))
+        meta.description = tr(item.get("description", ""))
+        if item.has("icon"):
+            meta.icon = item.get("icon", "")
+        return meta
+    var guide_key: String = "guide_file_modifiers_" + id_lower
+    var translated_guide: String = tr(guide_key)
+    if translated_guide != guide_key:
+        meta.description = translated_guide
+    return meta
+
 func _is_debug_enabled() -> bool:
     if not Engine.has_meta("TajsCore"):
         return false
@@ -276,4 +394,32 @@ func _is_debug_enabled() -> bool:
 
 func _log_debug(message: String) -> void:
     if _is_debug_enabled():
-        CoreLog.log_info(LOG_NAME, "DEBUG: %s" % message)
+        _log_info("DEBUG: %s" % message)
+
+func _log_info(message: String) -> void:
+    if Engine.has_meta("TajsCore"):
+        var core = Engine.get_meta("TajsCore")
+        if core != null and core.has_method("logi"):
+            core.logi("TajemnikTV-CommandPalette", message)
+            return
+    if _has_global_class("ModLoaderLog"):
+        ModLoaderLog.info(message, LOG_NAME)
+    else:
+        print("%s %s" % [LOG_NAME, message])
+
+func _log_error(message: String) -> void:
+    if Engine.has_meta("TajsCore"):
+        var core = Engine.get_meta("TajsCore")
+        if core != null and core.has_method("loge"):
+            core.loge("TajemnikTV-CommandPalette", message)
+            return
+    if _has_global_class("ModLoaderLog"):
+        ModLoaderLog.error(message, LOG_NAME)
+    else:
+        print("%s %s" % [LOG_NAME, message])
+
+static func _has_global_class(class_name_str: String) -> bool:
+    for entry in ProjectSettings.get_global_class_list():
+        if entry.get("class", "") == class_name_str:
+            return true
+    return false

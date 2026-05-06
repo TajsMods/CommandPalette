@@ -1,4 +1,4 @@
-class_name TajsModPaletteConfig
+class_name TajsCommandPalettePaletteConfig
 extends "res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/palette_settings.gd"
 
 func setup(mod_config_ref = null, _unused = null) -> void:

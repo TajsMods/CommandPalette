@@ -1,4 +1,4 @@
-class_name TajsModCalculator
+class_name TajsCommandPaletteCalculator
 extends RefCounted
 
 const LOG_NAME = "Calculator"

@@ -1,4 +1,4 @@
-class_name TajsModPaletteTheme
+class_name TajsCommandPalettePaletteTheme
 extends RefCounted
 
 # ==============================================================================

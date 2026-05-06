@@ -3,7 +3,6 @@ extends RefCounted
 
 const LOG_NAME := "PaletteSettings"
 const SETTINGS_KEY := "core.command_palette"
-const CoreLog = preload("res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/common/core_log.gd")
 const CorePaletteScript = preload("res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/command_palette.gd")
 
 var _palette
@@ -108,4 +107,19 @@ func _get_core():
 
 
 func _log_warn(message: String) -> void:
-    CoreLog.log_warn(LOG_NAME, message)
+    if Engine.has_meta("TajsCore"):
+        var core = Engine.get_meta("TajsCore")
+        if core != null and core.has_method("logw"):
+            core.logw("TajemnikTV-CommandPalette", message)
+            return
+    if _has_global_class("ModLoaderLog"):
+        ModLoaderLog.warning(message, LOG_NAME)
+    else:
+        print("%s %s" % [LOG_NAME, message])
+
+
+static func _has_global_class(class_name_str: String) -> bool:
+    for entry in ProjectSettings.get_global_class_list():
+        if entry.get("class", "") == class_name_str:
+            return true
+    return false

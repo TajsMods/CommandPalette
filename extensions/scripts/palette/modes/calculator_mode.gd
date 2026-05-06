@@ -1,4 +1,4 @@
-class_name TajsModCalculatorMode
+class_name TajsCommandPaletteCalculatorMode
 extends "res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/modes/mode_base.gd"
 
 const Calculator = preload("res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/calculator.gd")

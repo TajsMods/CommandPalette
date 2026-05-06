@@ -1,4 +1,4 @@
-class_name TajsModDefinitionPanelBase
+class_name TajsCommandPaletteDefinitionPanelBase
 extends Control
 
 const PaletteTheme = preload("res://mods-unpacked/TajemnikTV-CommandPalette/extensions/scripts/palette/palette_theme.gd")

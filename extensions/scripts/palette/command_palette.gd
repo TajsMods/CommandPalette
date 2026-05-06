@@ -1,7 +1,10 @@
-class_name TajsCoreCommandPalette
+class_name TajsCommandPaletteState
 extends RefCounted
 
 const MODULE_ID := "TajemnikTV-CommandPalette"
+const SETTINGS_PREFIX := "tajs_command_palette"
+const SETTING_MAX_RECENTS := SETTINGS_PREFIX + ".max_recents"
+const LEGACY_SETTING_MAX_RECENTS := MODULE_ID + ".max_recents"
 const SETTINGS_KEY := "core.command_palette"
 const LEGACY_SETTINGS_KEY := "command_palette.config"
 const CORE_DEBUG_KEY := "core.debug"
@@ -44,9 +47,9 @@ func setup(settings, logger = null) -> void:
     _save_all()
 
 func _register_schema() -> void:
-    if _settings != null and _settings.has_method("register_schema"):
-        _settings.register_schema(MODULE_ID, {
-            MODULE_ID + ".max_recents": {
+    if _core != null and _core.has_method("register_settings_schema"):
+        _core.register_settings_schema(MODULE_ID, {
+            SETTING_MAX_RECENTS: {
                 "type": "int",
                 "default": 10,
                 "description": "Maximum number of recent commands"
@@ -168,7 +171,7 @@ func set_value(key: String, value) -> void:
     _save_config()
 
 func _on_setting_changed(key: String, value, _old) -> void:
-    if key == "TajemnikTV-CommandPalette.max_recents" and str(value).is_valid_int():
+    if (key == SETTING_MAX_RECENTS or key == LEGACY_SETTING_MAX_RECENTS) and str(value).is_valid_int():
         _enforce_recents_limit(int(value))
 
 func _enforce_recents_limit(limit: int) -> void:
@@ -215,8 +218,10 @@ func add_recent(command_id: String) -> void:
     _state_recents.erase(command_id)
     _state_recents.push_front(command_id)
     var max_recents = 10
-    if _settings != null and _settings.has_method("get_int"):
-        max_recents = _settings.get_int("TajemnikTV-CommandPalette.max_recents", 10)
+    if _core != null and _core.has_method("get_setting"):
+        max_recents = int(_core.get_setting(MODULE_ID, "max_recents", 10))
+    elif _settings != null and _settings.has_method("get_int"):
+        max_recents = _settings.get_int(SETTING_MAX_RECENTS, _settings.get_int(LEGACY_SETTING_MAX_RECENTS, 10))
     else:
         max_recents = int(get_value("max_recents", 10))
     if _state_recents.size() > max_recents:

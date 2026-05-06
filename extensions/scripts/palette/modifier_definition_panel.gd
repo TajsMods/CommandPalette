@@ -1,4 +1,4 @@
-class_name TajsModModifierDefinitionPanel
+class_name TajsCommandPaletteModifierDefinitionPanel
 extends PanelContainer
 
 signal back_requested
